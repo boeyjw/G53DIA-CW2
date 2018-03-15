@@ -11,6 +11,8 @@ public class EntityChecker {
     public static final int WELL = 1;
     public static final int STATION = 2;
     public static final int EMPTYCELL = 4;
+    public static final int TASKEDSTATION = 5;
+    public static final int TANKER = 6;
 
     /**
      * Checks if given entity is a {@link Station}

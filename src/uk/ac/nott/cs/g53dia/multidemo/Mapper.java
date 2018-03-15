@@ -1,3 +1,10 @@
+package uk.ac.nott.cs.g53dia.multidemo;
+
+import uk.ac.nott.cs.g53dia.multidemo.Calculation;
+import uk.ac.nott.cs.g53dia.multidemo.Coordinates;
+import uk.ac.nott.cs.g53dia.multidemo.CoreEntity;
+import uk.ac.nott.cs.g53dia.multidemo.EntityNode;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;

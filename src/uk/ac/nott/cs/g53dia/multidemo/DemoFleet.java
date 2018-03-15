@@ -12,7 +12,7 @@ public class DemoFleet extends Fleet {
 
     public DemoFleet() {
         // Create the tankers
-        for (int i=0; i<FLEET_SIZE; i++) {
+        for (int i = 0; i < FLEET_SIZE; i++) {
             this.add(new DemoTanker());
         }
     }

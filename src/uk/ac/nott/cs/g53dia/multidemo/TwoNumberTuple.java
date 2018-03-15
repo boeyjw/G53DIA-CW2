@@ -1,3 +1,5 @@
+package uk.ac.nott.cs.g53dia.multidemo;
+
 /**
  * Represent a 2-tuple of (int x, int y)
  */

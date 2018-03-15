@@ -2,9 +2,7 @@ package uk.ac.nott.cs.g53dia.multidemo;
 import uk.ac.nott.cs.g53dia.multilibrary.*;
 import uk.ac.nott.cs.g53dia.multidemo.CoreEntity;
 
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 /**
  * A simple example Tanker
@@ -19,16 +17,45 @@ import java.util.Random;
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 public class DemoTanker extends Tanker {
-    private Hashtable<String, List<CoreEntity>> entities;
-    private MapBuilder mapper;
+    // Debugging utility object
+    private Log l;
+
+    // Tanker identification
+    private int tankerID;
+
+    // Entity objects
+    private Hashtable<Integer, List<CoreEntity>> entities;
     private List<CoreEntity> fuelpump, well, station, taskedStation;
-	
-    public DemoTanker() { 
-	this(new Random());
+    private Deque<CoreEntity> moves;
+
+    // Mapping objects
+    private MapBuilder mapper;
+    private MapBuilder history;
+
+    // Behaviour objects
+    private Explorer explorer;
+    private int explorerDirection;
+
+    public DemoTanker() {
+        this(new Random());
     }
 
     public DemoTanker(Random r) {
-	this.r = r;
+        this.r = r;
+        l = new Log(true);
+
+        entities = new Hashtable<>();
+        fuelpump = new ArrayList<>();
+        well = new ArrayList<>();
+        station = new ArrayList<>();
+        taskedStation = new ArrayList<>();
+        moves = new ArrayDeque<>();
+
+        mapper = new MapBuilder();
+        history = new MapBuilder();
+
+        explorer = new Explorer(this.r);
+        explorerDirection = explorer.getAndUpdateDirection();
     }
 
     /*
@@ -100,10 +127,10 @@ public class DemoTanker extends Tanker {
         }
 
         // Add stacks into HashTable to be sent over to the decision function
-        entities.put("fuel", fuelpump);
-        entities.put("well", well);
-        entities.put("station", station);
-        entities.put("taskedStation", taskedStation);
+        entities.put(EntityChecker.FUELPUMP, fuelpump);
+        entities.put(EntityChecker.WELL, well);
+        entities.put(EntityChecker.STATION, station);
+        entities.put(EntityChecker.TASKEDSTATION, taskedStation);
     }
 
     /**
@@ -127,6 +154,40 @@ public class DemoTanker extends Tanker {
         else if(EntityChecker.isWell(entity)) {
             well.add(node);
         }
+    }
+
+    private FallibleAction returnAction(Cell[][] view) {
+        Cell c = moves.peekFirst().getEntity();
+
+        if(EntityChecker.getEntityType(c) == EntityChecker.getEntityType(getCurrentCell(view))) {
+            l.d("Current: " + getCurrentCell(view).hashCode());
+            if(EntityChecker.isFuelPump(c)) {
+                if(Explorer.explorerMode) {
+                    explorerDirection = explorer.getAndUpdateDirection();
+                }
+                history.simpleAdd(moves.removeFirst());
+                l.d("MOVES: REFUEL" + " => " + c.getClass() + " @ " + c.hashCode());
+                return new RefuelAction();
+            }
+            else if(EntityChecker.isWell(c)) {
+                history.simpleAdd(moves.removeFirst());
+                l.d("MOVES: DUMP" + " => " + c.getClass() + " @ " + c.hashCode());
+                return new DisposeWasteAction();
+            }
+            else if(EntityChecker.isStation(c) && getWasteCapacity() > 0) {
+                history.simpleAdd(moves.removeFirst());
+                if(((Station) getCurrentCell(view)).getTask() != null) {
+                    l.d("MOVES: LOAD" + " => " + c.getClass() + " @ " + c.hashCode());
+                    return new LoadWasteAction(((Station) getCurrentCell(view)).getTask());
+                }
+            }
+            else { //Empty cell
+                l.d("MOVES: EMPTY CELL" + " => " + c.getClass() + " @ " + c.hashCode());
+                history.simpleAdd(moves.removeFirst());
+            }
+        }
+
+        return null;
     }
 
     private void cleanup() {
