@@ -1,5 +1,7 @@
 # Custom
-.idea/
+*.iml
+out/
+.idea
 
 # Compiled class file
 *.class
