@@ -22,7 +22,7 @@ public class Coordinates extends TwoNumberTuple {
      * @param target Target coordinate
      * @return The distance between both points
      */
-    public int distanceBetweenCoordinate(Coordinates target) {
+    public int distanceToCoordinate(Coordinates target) {
         return Calculation.diagonalDistance(this, target);
     }
 
