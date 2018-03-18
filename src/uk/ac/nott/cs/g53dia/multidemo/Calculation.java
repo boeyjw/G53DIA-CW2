@@ -3,10 +3,27 @@ package uk.ac.nott.cs.g53dia.multidemo;
 import uk.ac.nott.cs.g53dia.multidemo.Coordinates;
 import uk.ac.nott.cs.g53dia.multilibrary.MoveAction;
 
+import java.util.Hashtable;
+
 /**
  * Mainly a static class that handles calculations
  */
 public class Calculation {
+    public static final int ONTANKER = 8;
+
+    private static Hashtable<Integer, Integer> directionReflect;
+
+    static {
+        directionReflect = new Hashtable<>();
+        directionReflect.put(MoveAction.NORTH, MoveAction.SOUTH);
+        directionReflect.put(MoveAction.SOUTH, MoveAction.NORTH);
+        directionReflect.put(MoveAction.EAST, MoveAction.WEST);
+        directionReflect.put(MoveAction.WEST, MoveAction.EAST);
+        directionReflect.put(MoveAction.NORTHEAST, MoveAction.SOUTHEAST);
+        directionReflect.put(MoveAction.SOUTHEAST, MoveAction.NORTHWEST);
+        directionReflect.put(MoveAction.NORTHWEST, MoveAction.SOUTHWEST);
+        directionReflect.put(MoveAction.SOUTHWEST, MoveAction.NORTHWEST);
+    }
     /**
      * Calculate Euclidean distnace between Coordinates
      * @param source The source coordinate
@@ -48,13 +65,15 @@ public class Calculation {
         }
         else {
             if(xdiff < 0 && ydiff > 0)
-                bearing = MoveAction.NORTHEAST;
-            else if(xdiff > 0 && ydiff > 0)
                 bearing = MoveAction.NORTHWEST;
+            else if(xdiff > 0 && ydiff > 0)
+                bearing = MoveAction.NORTHEAST;
             else if(xdiff < 0 && ydiff < 0)
-                bearing = MoveAction.SOUTHEAST;
-            else if(xdiff > 0 && ydiff < 0)
                 bearing = MoveAction.SOUTHWEST;
+            else if(xdiff > 0 && ydiff < 0)
+                bearing = MoveAction.SOUTHEAST;
+            else
+                bearing = ONTANKER;
         }
 
         return bearing;
@@ -69,7 +88,7 @@ public class Calculation {
     public static String directionToString(int direction) {
         String dirStr[] = {
                 "NORTH", "SOUTH", "EAST", "WEST", "NORTHEAST",
-                "NORTHWEST", "SOUTHEAST", "SOUTHWEST"
+                "NORTHWEST", "SOUTHEAST", "SOUTHWEST", "ONTANKER"
         };
         return dirStr[direction];
     }
@@ -108,7 +127,15 @@ public class Calculation {
      * @return The distance between two coordinates
      */
     public static int diagonalDistance(Coordinates source, Coordinates target) {
-        return Math.max(Math.abs(target.getValue(0) - source.getValue(0)), Math.abs(target.getValue(1) - source.getValue(1)));
+        return Math.max(
+                Math.abs(target.getValue(0) - source.getValue(0)),
+                Math.abs(target.getValue(1) - source.getValue(1)));
+    }
+
+    public static TwoNumberTuple diagonalDistanceTuple(Coordinates source, Coordinates target) {
+        return new TwoNumberTuple(
+                Math.abs(target.getValue(0) - source.getValue(0)),
+                Math.abs(target.getValue(1) - source.getValue(1)));
     }
 
     /**

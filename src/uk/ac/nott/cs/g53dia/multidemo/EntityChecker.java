@@ -7,6 +7,7 @@ import uk.ac.nott.cs.g53dia.multilibrary.*;
  * Utility class to avoid overcrowding of code with redundant checks
  */
 public class EntityChecker {
+    public static final int DUMMY = -1;
     public static final int FUELPUMP = 0;
     public static final int WELL = 1;
     public static final int STATION = 2;
@@ -50,6 +51,10 @@ public class EntityChecker {
         return entity instanceof EmptyCell;
     }
 
+    public static boolean isTanker(Cell entity) { return entity instanceof Tanker; }
+
+    public static boolean isTaskedStation(Cell entity) { return isStation(entity) && hasTaskStation(entity); }
+
     public static boolean hasTaskStation(Cell station) {
         return isStation(station) && ((Station) station).getTask() != null;
     }
@@ -78,15 +83,23 @@ public class EntityChecker {
             return "INVALID";
     }
 
-    public static int getEntityType(Cell entity) {
+    public static int getEntityType(Cell entity, boolean ignoreTaskedStation) {
         if(isEmptyCell(entity))
             return EntityChecker.EMPTYCELL;
         else if(isFuelPump(entity))
             return EntityChecker.FUELPUMP;
-        else if(isStation(entity))
-            return EntityChecker.STATION;
+        else if(isStation(entity)) {
+            if(ignoreTaskedStation)
+                return EntityChecker.STATION;
+            else if(hasTaskStation(entity))
+                return EntityChecker.TASKEDSTATION;
+            else
+                return EntityChecker.STATION;
+        }
         else if(isWell(entity))
             return EntityChecker.WELL;
+        else if(isTanker(entity))
+            return EntityChecker.TANKER;
         else
             throw new IllegalArgumentException("Invalid entity type");
     }

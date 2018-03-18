@@ -34,25 +34,25 @@ public class TwoNumberTuple implements NumberTuple {
 
     @Override
     public NumberTuple simpleOperation(int value, NumberTuple otherNumberTuple, String operation) {
-        int x = Integer.MIN_VALUE;
-        int y = Integer.MIN_VALUE;
+        int x = this.x;
+        int y = this.y;
 
         switch (operation) {
             case PLUS:
-                x = this.x + (otherNumberTuple == null ? value : otherNumberTuple.getValue(0));
-                y = this.y + (otherNumberTuple == null ? value : otherNumberTuple.getValue(1));
+                x += (otherNumberTuple == null ? value : otherNumberTuple.getValue(0));
+                y += (otherNumberTuple == null ? value : otherNumberTuple.getValue(1));
                 break;
             case MINUS:
-                x = this.x - (otherNumberTuple == null ? value : otherNumberTuple.getValue(0));
-                y = this.y - (otherNumberTuple == null ? value : otherNumberTuple.getValue(1));
+                x -= (otherNumberTuple == null ? value : otherNumberTuple.getValue(0));
+                y -= (otherNumberTuple == null ? value : otherNumberTuple.getValue(1));
                 break;
             case MULTIPLY:
-                x = this.x * (otherNumberTuple == null ? value : otherNumberTuple.getValue(0));
-                y = this.y * (otherNumberTuple == null ? value : otherNumberTuple.getValue(1));
+                x *= (otherNumberTuple == null ? value : otherNumberTuple.getValue(0));
+                y *= (otherNumberTuple == null ? value : otherNumberTuple.getValue(1));
                 break;
             case DIVIDE:
-                x = this.x / (otherNumberTuple == null ? value : otherNumberTuple.getValue(0));
-                y = this.y / (otherNumberTuple == null ? value : otherNumberTuple.getValue(1));
+                x /= (otherNumberTuple == null ? value : otherNumberTuple.getValue(0));
+                y /= (otherNumberTuple == null ? value : otherNumberTuple.getValue(1));
                 break;
             default:
                 throw new IllegalArgumentException("Operation out of scope");

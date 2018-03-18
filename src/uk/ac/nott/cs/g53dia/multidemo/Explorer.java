@@ -16,12 +16,16 @@ public class Explorer extends Mapper {
     private long startExplorerTimestep;
     private long endExplorerTimeStep;
 
+    private MapBuilder exploitableAreas;
+
     public Explorer(Random r) {
         crossDirectionMovement = new HashMap<>();
         init();
         direction = r.nextInt(Threshold.TOTAL_DIRECTION_BOUND.getThreshold());
         startExplorerTimestep = 0;
         endExplorerTimeStep = 0;
+
+        exploitableAreas = new MapBuilder();
     }
 
     /**
@@ -90,5 +94,9 @@ public class Explorer extends Mapper {
 
     public void setEndExplorerTimeStep(long endExplorerTimeStep) {
         this.endExplorerTimeStep = endExplorerTimeStep;
+    }
+
+    public int saveExploitableAreas(Hashtable<Integer, List<CoreEntity>> entities) {
+        return -1;
     }
 }

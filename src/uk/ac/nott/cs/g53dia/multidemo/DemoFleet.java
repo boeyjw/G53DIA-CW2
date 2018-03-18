@@ -8,7 +8,7 @@ public class DemoFleet extends Fleet {
     /** 
      * Number of tankers in the fleet
      */
-    private static int FLEET_SIZE = 3;
+    private static int FLEET_SIZE = 1;
 
     public DemoFleet() {
         // Create the tankers

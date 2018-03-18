@@ -1,5 +1,6 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
+import javafx.beans.binding.StringBinding;
 import uk.ac.nott.cs.g53dia.multilibrary.Cell;
 import uk.ac.nott.cs.g53dia.multilibrary.Point;
 import uk.ac.nott.cs.g53dia.multilibrary.Station;
@@ -11,7 +12,10 @@ public abstract class CoreEntity {
     private Cell entity;
     private int entityHash;
     private Coordinates coord;
+    private long firstVisited;
     private long lastVisited;
+    private long firstSeen;
+    private long lastSeen;
     private boolean hasTask;
     private Point position;
     private int bearing;
@@ -21,7 +25,8 @@ public abstract class CoreEntity {
         this.entity = entity;
         this.entityHash = entity.getPoint().hashCode();
         this.coord = coord;
-        this.lastVisited = firstVisit;
+        this.firstVisited = this.lastVisited = Integer.MIN_VALUE;
+        this.firstSeen = this.lastSeen = firstVisit;
         this.hasTask = EntityChecker.isStation(entity) && ((Station) entity).getTask() != null;
         this.position = position;
         this.bearing = Integer.MIN_VALUE;
@@ -36,7 +41,7 @@ public abstract class CoreEntity {
         return entity;
     }
 
-    public boolean isHasTask() {
+    public boolean hasTask() {
         return hasTask;
     }
 
@@ -80,14 +85,43 @@ public abstract class CoreEntity {
         this.wasteRemaining = wasteRemaining;
     }
 
+    public long getFirstVisited() { return firstVisited; }
+
+    public long getFirstSeen() { return firstSeen; }
+
+    public long getLastSeen() { return lastSeen; }
+
+    public void setLastSeen(long lastSeen) { this.lastSeen = lastSeen; }
+
+    public void setFirstVisited(long firstVisited) { this.firstVisited = firstVisited; }
+
+    public void setLastVisitedSeen(long lastVisited) { this.lastSeen = this.lastVisited = lastVisited; }
+
     public boolean reduceWasteRemaining(int wasteCollected) {
         this.wasteRemaining -= wasteCollected;
-        if(this.wasteRemaining < 0) {
+        if (this.wasteRemaining < 0) {
             this.wasteRemaining = 0;
             return false;
-        }
-        else {
+        } else {
             return true;
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Type: ").append(EntityChecker.entityToString(this.getEntity(), EntityChecker.DUMMY)).append("\n");
+        sb.append("Hash: ").append(this.entityHash).append("\n");
+        sb.append("Coordinate: ").append(this.coord.toString()).append("\n");
+        sb.append("Bearing: ").append(Calculation.directionToString(this.bearing)).append("\n");
+        sb.append("First Seen: ").append(this.firstSeen).append("\n");
+        sb.append("Last Seen: ").append(this.lastSeen).append("\n");
+        sb.append("First Visited: ").append(this.firstVisited).append("\n");
+        sb.append("Last Visited: ").append(this.lastVisited).append("\n");
+        if (this.hasTask) {
+            sb.append("Waste Amount: ").append(this.wasteRemaining).append("\n");
+        }
+
+        return sb.toString();
     }
 }

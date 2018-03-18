@@ -1,6 +1,5 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 import uk.ac.nott.cs.g53dia.multilibrary.*;
-import uk.ac.nott.cs.g53dia.multidemo.CoreEntity;
 
 import java.util.*;
 
@@ -22,6 +21,7 @@ public class DemoTanker extends Tanker {
 
     // Tanker identification
     private int tankerID;
+    private TankerCoordinator tc;
 
     // Entity objects
     private Hashtable<Integer, List<CoreEntity>> entities;
@@ -44,6 +44,8 @@ public class DemoTanker extends Tanker {
         this.r = r;
         l = new Log(true);
 
+        tc = new TankerCoordinator();
+
         entities = new Hashtable<>();
         fuelpump = new ArrayList<>();
         well = new ArrayList<>();
@@ -65,16 +67,27 @@ public class DemoTanker extends Tanker {
      * point it returns to a fuel pump to refuel.
      */
     public Action senseAndAct(Cell[][] view, long timestep) {
- 
-    	// If fuel tank is low and not at the fuel pump then move
-    	// towards the fuel pump
-        if ((getFuelLevel() <= MAX_FUEL/2) && !(getCurrentCell(view) instanceof FuelPump)) {
-            return new MoveTowardsAction(FUEL_PUMP_LOCATION);
+        tc.setEntityUnderTanker(getCurrentCell(view));
+        // TODO: Add to global map
+        spiralScanView(view, timestep);
+        cleanup();
+        // TODO: Things to do
+        // If fuel tank is low and not at the fuel pump then move
+        // towards the fuel pump
+        l.d("Tanker Coordinate: " + tc.getTankerCoordinate().toString());
+        l.d("True Tanker Coordinate: " + getPosition().toString());
+        if (getFuelLevel() <= 52) {
+            if(EntityChecker.isFuelPump(getCurrentCell(view))) {
+                return new RefuelAction();
+            }
+            else {
+                return new MoveTowardsAction(FUEL_PUMP_LOCATION);
+            }
         } else {
             // Otherwise, move randomly
-            return new MoveAction(r.nextInt(8));       	
+            int rdir = r.nextInt(8);
+            return new MoveAction(rdir);
         }
-
     }
 
     /**
@@ -92,7 +105,7 @@ public class DemoTanker extends Tanker {
         fc - First column
         i - for loop iterator
          */
-        int c = 0;
+        int c = 0, x = -20, y = 21;
         fr = fc = 0;
         lc = Threshold.TOTAL_VIEW_RANGE.getThreshold() - 1;
         lr = Threshold.TOTAL_VIEW_RANGE.getThreshold() - 1;
@@ -100,26 +113,26 @@ public class DemoTanker extends Tanker {
         while(c < Threshold.TOTAL_VIEW_RANGE.getTotalViewGridLength()) {
             // Top row values
             for(i = fc; i <= lc; i++) {
-                binEntitiesToStack(view[fr][i], fr, i, timestep);
+                binEntitiesToStack(view[fr][i], x, --y, timestep);
                 c++;
             }
             fr++;
             // Right column values
             for(i = fr; i <= lr; i++) {
-                binEntitiesToStack(view[i][lc], i, lc, timestep);
+                binEntitiesToStack(view[i][lc], ++x, y, timestep);
                 c++;
             }
             lc--;
             if(fr < lr) { // Bottom row values
                 for(i = lc; i >= fc; i--) {
-                    binEntitiesToStack(view[lr][i], lr, i, timestep);
+                    binEntitiesToStack(view[lr][i], x, ++y, timestep);
                     c++;
                 }
                 lr--;
             }
             if(fc < lc) { // Left column values
                 for(i = lr; i >= fr; i--) {
-                    binEntitiesToStack(view[i][fc], i, fc, timestep);
+                    binEntitiesToStack(view[i][fc], --x, y, timestep);
                     c++;
                 }
                 fc++;
@@ -139,8 +152,17 @@ public class DemoTanker extends Tanker {
      * @param timestep The current timestep in the simulation
      */
     private void binEntitiesToStack(Cell entity, int x, int y, long timestep) {
-        EntityNode node = new EntityNode(entity, x, y, timestep);
-        node.setBearing(Calculation.targetBearing(Coordinates.getTankerCoordinate(), node.getCoord()));
+        CoreEntity node = new EntityNode(entity, x, y, timestep);
+        node.setBearing(Calculation.targetBearing(tc.getTankerCoordinate(), node.getCoord()));
+        if(node.getBearing() == Calculation.ONTANKER) {
+            node.setFirstVisited(timestep);
+        }
+//        if(node.getBearing() == Calculation.ONTANKER) {
+//            l.dc(node.toString());
+//            l.d("True Coordinate: " + node.getEntity().getPoint().toString());
+//            l.d("");
+//        }
+        mapper.update(node, false, timestep, tc.getEntityUnderTanker().hashCode());
         if(EntityChecker.isFuelPump(entity)) {
             fuelpump.add(node);
         }
@@ -148,7 +170,6 @@ public class DemoTanker extends Tanker {
             station.add(node);
             if(((Station) entity).getTask() != null) {
                 taskedStation.add(node);
-
             }
         }
         else if(EntityChecker.isWell(entity)) {
@@ -159,7 +180,7 @@ public class DemoTanker extends Tanker {
     private FallibleAction returnAction(Cell[][] view) {
         Cell c = moves.peekFirst().getEntity();
 
-        if(EntityChecker.getEntityType(c) == EntityChecker.getEntityType(getCurrentCell(view))) {
+        if(EntityChecker.getEntityType(c, true) == EntityChecker.getEntityType(getCurrentCell(view), true)) {
             l.d("Current: " + getCurrentCell(view).hashCode());
             if(EntityChecker.isFuelPump(c)) {
                 if(Explorer.explorerMode) {

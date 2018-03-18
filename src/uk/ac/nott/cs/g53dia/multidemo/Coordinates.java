@@ -6,17 +6,23 @@ import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
  * Utility class to store coordinates in tuple form
  */
 public class Coordinates extends TwoNumberTuple {
-    private static final Coordinates tankerCoordinate = new Coordinates(Tanker.VIEW_RANGE, Tanker.VIEW_RANGE);
-
     Coordinates(int x, int y) {
         super(x, y);
     }
 
     public void modifyCoordinates(int x, int y) {
-        if(x > 0)
+        if(x != Integer.MIN_VALUE)
             this.x = x;
-        if(y > 0)
+        if(y != Integer.MIN_VALUE)
             this.y = y;
+    }
+
+    public void modifyX(int x) {
+        this.x = x;
+    }
+
+    public void modifyY(int y) {
+        this.y = y;
     }
 
     /**
@@ -38,8 +44,19 @@ public class Coordinates extends TwoNumberTuple {
                 Math.abs(target.getValue(1) - this.getValue(1)));
     }
 
-    public static Coordinates getTankerCoordinate() {
-        return tankerCoordinate;
+    public void coordinateShiftBy(NumberTuple otherNumberTuple, String operation) {
+        switch (operation) {
+            case PLUS:
+                this.x += otherNumberTuple.getValue(0);
+                this.y += otherNumberTuple.getValue(1);
+                break;
+            case MINUS:
+                this.x -= otherNumberTuple.getValue(0);
+                this.y -= otherNumberTuple.getValue(1);
+                break;
+            default:
+                throw new IllegalArgumentException("Operation out of scope");
+        }
     }
 
     @Override
