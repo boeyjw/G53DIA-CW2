@@ -4,10 +4,10 @@ package uk.ac.nott.cs.g53dia.multidemo;
  *
  */
 public interface NumberTuple {
-    String PLUS = "+";
-    String MINUS = "-";
-    String MULTIPLY = "*";
-    String DIVIDE = "/";
+    char PLUS = '+';
+    char MINUS = '-';
+    char MULTIPLY = '*';
+    char DIVIDE = '/';
 
     /**
      * Get the value from the {@link NumberTuple} based on its position
@@ -35,5 +35,5 @@ public interface NumberTuple {
      * @param operation The arithmetic operation to do using constants in {@link NumberTuple}
      * @return A copy of the source tuple after applying arithmetic operation
      */
-    NumberTuple simpleOperation(int value, NumberTuple otherNumberTuple, String operation);
+    NumberTuple simpleOperation(int value, NumberTuple otherNumberTuple, char operation);
 }

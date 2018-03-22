@@ -33,7 +33,7 @@ public class TwoNumberTuple implements NumberTuple {
     }
 
     @Override
-    public NumberTuple simpleOperation(int value, NumberTuple otherNumberTuple, String operation) {
+    public NumberTuple simpleOperation(int value, NumberTuple otherNumberTuple, char operation) {
         int x = this.x;
         int y = this.y;
 
@@ -59,5 +59,14 @@ public class TwoNumberTuple implements NumberTuple {
         }
 
         return new TwoNumberTuple(x, y);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(!(obj instanceof TwoNumberTuple)) {
+            return false;
+        }
+        TwoNumberTuple n = (TwoNumberTuple) obj;
+        return n.getValue(0) == this.x && n.getValue(1) == this.y;
     }
 }

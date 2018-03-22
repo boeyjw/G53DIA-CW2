@@ -1,6 +1,5 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
-import uk.ac.nott.cs.g53dia.multidemo.CoreEntity;
 import uk.ac.nott.cs.g53dia.multilibrary.Cell;
 import uk.ac.nott.cs.g53dia.multilibrary.MoveAction;
 
@@ -9,7 +8,7 @@ import java.util.*;
 /**
  * Handles exploration of the tanker
  */
-public class Explorer extends Mapper {
+public class Explorer extends Planner {
     public static boolean explorerMode = false;
     private HashMap<Integer, Integer> crossDirectionMovement;
     private int direction;
@@ -41,6 +40,11 @@ public class Explorer extends Mapper {
         crossDirectionMovement.put(MoveAction.NORTHWEST, MoveAction.SOUTHEAST);
         crossDirectionMovement.put(MoveAction.SOUTHEAST, MoveAction.SOUTHWEST);
         crossDirectionMovement.put(MoveAction.SOUTHWEST, MoveAction.NORTH);
+    }
+
+    @Override
+    public Deque<CoreEntity> plan(Hashtable<Integer, List<CoreEntity>> map, TankerCoordinator tc, TwoNumberTuple tankerStatus, long timestep) {
+        return null;
     }
 
     public int getAndUpdateDirection() {
@@ -96,7 +100,13 @@ public class Explorer extends Mapper {
         this.endExplorerTimeStep = endExplorerTimeStep;
     }
 
+    /**
+     * TODO: exploit clusters
+     * @param entities
+     * @return
+     */
     public int saveExploitableAreas(Hashtable<Integer, List<CoreEntity>> entities) {
         return -1;
     }
+
 }

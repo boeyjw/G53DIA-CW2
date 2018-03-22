@@ -1,9 +1,12 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
 import javafx.beans.binding.StringBinding;
 import uk.ac.nott.cs.g53dia.multilibrary.Cell;
 import uk.ac.nott.cs.g53dia.multilibrary.Point;
 import uk.ac.nott.cs.g53dia.multilibrary.Station;
+import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
 
 /**
  * Stored essentially information retrieved by the agent for a particular cell
@@ -12,29 +15,35 @@ public abstract class CoreEntity {
     private Cell entity;
     private int entityHash;
     private Coordinates coord;
-    private long firstVisited;
-    private long lastVisited;
-    private long firstSeen;
-    private long lastSeen;
-    private boolean hasTask;
     private Point position;
-    private int bearing;
-    private int wasteRemaining;
+    private long firstVisited;
+    private long firstSeen;
 
-    CoreEntity(Cell entity, Coordinates coord, long firstVisit, Point position) {
+    protected long lastVisited;
+    protected long lastSeen;
+    protected boolean hasTask;
+    protected int bearing;
+    protected int wasteRemaining;
+    protected int timesVisited;
+    protected int timesSeen;
+
+    CoreEntity(@Nullable Cell entity, @NotNull Coordinates coord, @NotNull long firstSeen) {
         this.entity = entity;
-        this.entityHash = entity.getPoint().hashCode();
+        this.entityHash = entity == null ? Integer.MIN_VALUE : entity.getPoint().hashCode();
         this.coord = coord;
+        this.position = entity == null ? null : entity.getPoint();
+
         this.firstVisited = this.lastVisited = Integer.MIN_VALUE;
-        this.firstSeen = this.lastSeen = firstVisit;
-        this.hasTask = EntityChecker.isStation(entity) && ((Station) entity).getTask() != null;
-        this.position = position;
+        this.firstSeen = this.lastSeen = firstSeen;
+        this.hasTask = entity != null && EntityChecker.hasTaskStation(entity);
         this.bearing = Integer.MIN_VALUE;
         this.wasteRemaining = this.hasTask ? ((Station) entity).getTask().getWasteRemaining() : Integer.MIN_VALUE;
+        this.timesVisited = 1;
+        this.timesSeen = 1;
     }
 
-    CoreEntity(Cell entity, int x, int y, long firstVisit) {
-        this(entity, new Coordinates(x, y), firstVisit, null);
+    CoreEntity(@Nullable Cell entity, @NotNull int x, @NotNull int y, @NotNull long firstSeen) {
+        this(entity, new Coordinates(x, y), firstSeen);
     }
 
     public Cell getEntity() {
@@ -105,6 +114,31 @@ public abstract class CoreEntity {
         } else {
             return true;
         }
+    }
+
+    public int getTimesSeen() { return timesSeen; }
+
+    public void incTimesSeen() { timesSeen++; }
+
+    public int getTimesVisited() { return timesVisited; }
+
+    public void incTimesVisited() { timesVisited++; }
+
+    public boolean isDirectionalEntity() { return entity == null && bearing != Integer.MIN_VALUE; }
+
+    public int getDistanceToTanker(Coordinates tankerCoordinate) { return coord.distanceToCoordinate(tankerCoordinate); }
+
+    public boolean canLoadAllWaste(int tankerWasteCapacity) { return hasTask && tankerWasteCapacity + wasteRemaining <= Tanker.MAX_WASTE; }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(!(obj instanceof CoreEntity)) {
+            return false;
+        }
+        CoreEntity c = (CoreEntity) obj;
+
+        return c.getEntity() == null && entity == null && isDirectionalEntity() == c.isDirectionalEntity() ?
+                bearing == c.getBearing() : entity.equals((Cell) ((CoreEntity) obj).getEntity());
     }
 
     @Override

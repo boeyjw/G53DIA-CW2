@@ -2,14 +2,12 @@ package uk.ac.nott.cs.g53dia.multidemo;
 
 import uk.ac.nott.cs.g53dia.multilibrary.Cell;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
+import java.util.*;
 
 /**
  * Builds a representation of the Tanker's observed state
  */
-public class MapBuilder extends Mapper {
+public class MapBuilder {
     public static final int ADD = 1;
     public static final int EXIST = 2;
     public static final int REJECTED = -1;
@@ -22,7 +20,7 @@ public class MapBuilder extends Mapper {
         globalmap.put(EntityChecker.WELL, new ArrayList<>());
         globalmap.put(EntityChecker.STATION, new ArrayList<>());
         globalmap.put(EntityChecker.TANKER, new ArrayList<>());
-        globalmap.put(EntityChecker.TASKEDSTATION, new ArrayList<>());
+        globalmap.put(EntityChecker.TASKEDSTATION, new LinkedList<>());
     }
 
     public Hashtable<Integer, List<CoreEntity>> getGlobalmap() { return globalmap; }
@@ -36,9 +34,10 @@ public class MapBuilder extends Mapper {
      */
     public NumberTuple addNonDuplicativePositions(CoreEntity entity) {
         int entityType = EntityChecker.getEntityType(entity.getEntity(), true);
+        NumberTuple t = new TwoNumberTuple(REJECTED, entityType);
 
         if(EntityChecker.isEmptyCell(entity.getEntity()))
-            return new TwoNumberTuple(REJECTED, entityType);
+            return t;
 
         List<CoreEntity> entityListToCompare = globalmap.get(entityType);
         for(int i = 0; i < entityListToCompare.size(); i++) {
@@ -46,11 +45,19 @@ public class MapBuilder extends Mapper {
                 globalmap.get(entityType).get(i).setLastSeen(entity.getFirstSeen());
                 globalmap.get(entityType).get(i).setBearing(entity.getBearing());
                 // (index-status, entityType)
-                return new TwoNumberTuple(((i + 1) * 10) + EXIST, entityType);
+                t = new TwoNumberTuple(((i + 1) * 10) + EXIST, entityType);
             }
         }
-        globalmap.get(entityType).add(entity);
-        return new TwoNumberTuple(((globalmap.get(entityType).size() + 1) * 10) + ADD, entityType);
+        if(t.getValue(0) == REJECTED) {
+            globalmap.get(entityType).add(entity);
+            t = new TwoNumberTuple(((globalmap.get(entityType).size() + 1) * 10) + ADD, entityType);
+        }
+        if(t.getValue(0) != REJECTED && entityType == EntityChecker.STATION && entity.hasTask()) {
+            globalmap.get(EntityChecker.TASKEDSTATION).remove(entity);
+            globalmap.get(EntityChecker.TASKEDSTATION).add(globalmap.get(EntityChecker.STATION).get(Math.floorDiv(t.getValue(0), 10) - 1));
+        }
+
+        return t;
     }
 
     /**
@@ -81,14 +88,16 @@ public class MapBuilder extends Mapper {
             return;
         }
 
-        int ind = Math.floorDiv(t.getValue(0), 10);
+        int ind = Math.floorDiv(t.getValue(0), 10) - 1;
         // Tanker visiting this entity
         if(globalmap.get(t.getValue(1)).get(ind).getEntityHash() == tankerEntityHash) {
             globalmap.get(t.getValue(1)).get(ind).setLastVisitedSeen(timestep);
+            globalmap.get(t.getValue(1)).get(ind).incTimesVisited();
         }
         else { // Tanker sees this entity
             globalmap.get(t.getValue(1)).get(ind).setLastSeen(timestep);
         }
+        globalmap.get(t.getValue(1)).get(ind).incTimesSeen();
     }
 
     /**

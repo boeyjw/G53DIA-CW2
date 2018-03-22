@@ -174,4 +174,13 @@ public class Calculation {
 
         return argmax;
     }
+
+    /**
+     * Get the opposite direction of the one in the argument
+     * @param direction A valid direction
+     * @return
+     */
+    public static int getReflectedDirection(int direction) {
+        return directionReflect.get(direction);
+    }
 }

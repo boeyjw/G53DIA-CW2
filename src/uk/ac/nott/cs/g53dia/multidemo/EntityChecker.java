@@ -51,8 +51,6 @@ public class EntityChecker {
         return entity instanceof EmptyCell;
     }
 
-    public static boolean isTanker(Cell entity) { return entity instanceof Tanker; }
-
     public static boolean isTaskedStation(Cell entity) { return isStation(entity) && hasTaskStation(entity); }
 
     public static boolean hasTaskStation(Cell station) {
@@ -98,8 +96,6 @@ public class EntityChecker {
         }
         else if(isWell(entity))
             return EntityChecker.WELL;
-        else if(isTanker(entity))
-            return EntityChecker.TANKER;
         else
             throw new IllegalArgumentException("Invalid entity type");
     }

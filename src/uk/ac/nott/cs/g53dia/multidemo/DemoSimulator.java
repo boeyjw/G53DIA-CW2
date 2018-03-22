@@ -25,12 +25,12 @@ public class DemoSimulator {
      * Time for which execution pauses so that GUI can update.
      * Reducing this value causes the simulation to run faster.
      */
-    private static int DELAY = 500;
+    private static int DELAY = 0;
 
     /**
      * Number of timesteps to execute
      */
-    private static int DURATION = 10000;
+    private static int DURATION = 3;
 
     public static void main(String[] args) {
         // Create an environment

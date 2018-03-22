@@ -8,10 +8,14 @@ public class TankerCoordinator {
     private static final Coordinates tankerViewRangeCoordinate = new Coordinates(Tanker.VIEW_RANGE, Tanker.VIEW_RANGE);
     private Coordinates tankerCoordinate;
     private Cell entityUnderTanker;
+    private int tankerID;
+    private int totalWasteCollected;
 
-    TankerCoordinator() {
+    TankerCoordinator(int tankerID) {
         tankerCoordinate = new Coordinates(0, 0);
         this.entityUnderTanker = null;
+        this.tankerID = tankerID;
+        this.totalWasteCollected = 0;
     }
 
     public static Coordinates getTankerViewRangeCoordinate() {
@@ -75,14 +79,53 @@ public class TankerCoordinator {
                 throw new IllegalArgumentException("Invalid direction" + "<" + moveAction + ">");
         }
 
-        tankerCoordinate.coordinateShiftBy(new Coordinates(x, y), "+");
+        tankerCoordinate.coordinateShiftBy(new Coordinates(x, y), '+');
     }
 
     public Cell getEntityUnderTanker() {
         return entityUnderTanker;
     }
 
+    public CoreEntity getEntityUnderTankerAsCE() {
+        return new EntityNode(entityUnderTanker, tankerCoordinate, -1);
+    }
+
+    public CoreEntity getEntityUnderTankerAsCE(long timestep) {
+        return new EntityNode(entityUnderTanker, tankerCoordinate, timestep);
+    }
+
     public void setEntityUnderTanker(Cell entityUnderTanker) {
         this.entityUnderTanker = entityUnderTanker;
+    }
+
+    public int getTankerID() {
+        return tankerID;
+    }
+
+    public int getTotalWasteCollected() {
+        return totalWasteCollected;
+    }
+
+    public void addTotalWasteCollected(int wasteCollected) {
+        this.totalWasteCollected += wasteCollected;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tanker ID: ");
+        sb.append(tankerID);
+        sb.append("\n");
+        sb.append("Tanker Coordinate: ");
+        sb.append(tankerCoordinate.toString());
+        sb.append("\n");
+        sb.append("Entity Under Tanker: ");
+        sb.append(EntityChecker.entityToString(entityUnderTanker, Integer.MIN_VALUE));
+        sb.append("\n");
+        sb.append("Waste Collected: ");
+        sb.append(totalWasteCollected);
+        sb.append("\n");
+
+        return sb.toString();
     }
 }

@@ -16,8 +16,8 @@ public class EntityNode extends CoreEntity {
 
     private EntityNode parent;
 
-    public EntityNode(Cell entity, Coordinates coord, long firstVisited, Point position) {
-        super(entity, coord, firstVisited, position);
+    public EntityNode(Cell entity, Coordinates coord, long firstVisited) {
+        super(entity, coord, firstVisited);
         this.weight = 1; // No weight
         this.gscore = Integer.MAX_VALUE;
         this.hscore = Integer.MAX_VALUE;
@@ -28,7 +28,7 @@ public class EntityNode extends CoreEntity {
     }
 
     public EntityNode(Cell entity, int x, int y, long firstVisited) {
-        this(entity, new Coordinates(x, y), firstVisited, null);
+        this(entity, new Coordinates(x, y), firstVisited);
     }
 
     public int getGscore() {

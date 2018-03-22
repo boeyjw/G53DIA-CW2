@@ -36,15 +36,15 @@ public class DemoTanker extends Tanker {
     private Explorer explorer;
     private int explorerDirection;
 
-    public DemoTanker() {
-        this(new Random());
-    }
+//    public DemoTanker() {
+//        this(new Random());
+//    }
 
-    public DemoTanker(Random r) {
+    public DemoTanker(Random r, int tankerID) {
         this.r = r;
         l = new Log(true);
 
-        tc = new TankerCoordinator();
+        tc = new TankerCoordinator(tankerID);
 
         entities = new Hashtable<>();
         fuelpump = new ArrayList<>();
@@ -57,7 +57,6 @@ public class DemoTanker extends Tanker {
         history = new MapBuilder();
 
         explorer = new Explorer(this.r);
-        explorerDirection = explorer.getAndUpdateDirection();
     }
 
     /*
@@ -72,22 +71,9 @@ public class DemoTanker extends Tanker {
         spiralScanView(view, timestep);
         cleanup();
         // TODO: Things to do
-        // If fuel tank is low and not at the fuel pump then move
-        // towards the fuel pump
-        l.d("Tanker Coordinate: " + tc.getTankerCoordinate().toString());
-        l.d("True Tanker Coordinate: " + getPosition().toString());
-        if (getFuelLevel() <= 52) {
-            if(EntityChecker.isFuelPump(getCurrentCell(view))) {
-                return new RefuelAction();
-            }
-            else {
-                return new MoveTowardsAction(FUEL_PUMP_LOCATION);
-            }
-        } else {
-            // Otherwise, move randomly
-            int rdir = r.nextInt(8);
-            return new MoveAction(rdir);
-        }
+        int rdir = r.nextInt(8);
+        tc.moveActionTankerDisplace(rdir, actionFailed);
+        return new MoveAction(rdir);
     }
 
     /**
@@ -157,12 +143,11 @@ public class DemoTanker extends Tanker {
         if(node.getBearing() == Calculation.ONTANKER) {
             node.setFirstVisited(timestep);
         }
-//        if(node.getBearing() == Calculation.ONTANKER) {
-//            l.dc(node.toString());
-//            l.d("True Coordinate: " + node.getEntity().getPoint().toString());
-//            l.d("");
-//        }
-        mapper.update(node, false, timestep, tc.getEntityUnderTanker().hashCode());
+        if(node.getBearing() == Calculation.ONTANKER) {
+            l.dc(node.toString());
+            l.d("True Coordinate: " + node.getEntity().getPoint().toString());
+            l.d("");
+        }
         if(EntityChecker.isFuelPump(entity)) {
             fuelpump.add(node);
         }
@@ -175,6 +160,7 @@ public class DemoTanker extends Tanker {
         else if(EntityChecker.isWell(entity)) {
             well.add(node);
         }
+        mapper.update(node, false, timestep, tc.getEntityUnderTanker().hashCode());
     }
 
     private FallibleAction returnAction(Cell[][] view) {
@@ -209,6 +195,14 @@ public class DemoTanker extends Tanker {
         }
 
         return null;
+    }
+
+    public TankerCoordinator getTC() {
+        return tc;
+    }
+
+    public Hashtable<Integer, List<CoreEntity>> getGlobalMap() {
+        return mapper.getGlobalmap();
     }
 
     private void cleanup() {
