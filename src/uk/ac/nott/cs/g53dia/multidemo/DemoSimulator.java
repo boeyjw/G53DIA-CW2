@@ -30,7 +30,7 @@ public class DemoSimulator {
     /**
      * Number of timesteps to execute
      */
-    private static int DURATION = 3;
+    private static int DURATION = 10000;
 
     public static void main(String[] args) {
         // Create an environment
@@ -38,14 +38,14 @@ public class DemoSimulator {
         //Create a fleet
         Fleet fleet = new DemoFleet();
         // Create a GUI window to show the fleet
-        TankerViewer tv = new TankerViewer(fleet);
-        tv.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
+//        TankerViewer tv = new TankerViewer(fleet);
+//        tv.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
         // Start executing the tankers in the Fleet
         while (env.getTimestep() < DURATION) {
             // Advance the environment timestep
             env.tick();
             // Update the GUI
-            tv.tick(env);
+//            tv.tick(env);
 
             for (Tanker t:fleet) {
                 // Get the current view of the tanker
@@ -59,7 +59,7 @@ public class DemoSimulator {
                     System.err.println(ofe.getMessage());
                     System.exit(-1);
                 } catch (ActionFailedException afe) {
-                    System.err.println(afe.getMessage());
+                    System.err.println(afe.getMessage() + " " + env.getTimestep());
                 }
             }
             try {

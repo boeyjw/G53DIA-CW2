@@ -15,7 +15,6 @@ public abstract class CoreEntity {
     private Cell entity;
     private int entityHash;
     private Coordinates coord;
-    private Point position;
     private long firstVisited;
     private long firstSeen;
 
@@ -31,7 +30,6 @@ public abstract class CoreEntity {
         this.entity = entity;
         this.entityHash = entity == null ? Integer.MIN_VALUE : entity.getPoint().hashCode();
         this.coord = coord;
-        this.position = entity == null ? null : entity.getPoint();
 
         this.firstVisited = this.lastVisited = Integer.MIN_VALUE;
         this.firstSeen = this.lastSeen = firstSeen;
@@ -68,14 +66,6 @@ public abstract class CoreEntity {
 
     public Coordinates getCoord() {
         return coord;
-    }
-
-    public Point getPosition() {
-        return position;
-    }
-
-    public void setPosition(Point position) {
-        this.position = position;
     }
 
     public int getBearing() {

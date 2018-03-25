@@ -3,7 +3,7 @@ package uk.ac.nott.cs.g53dia.multidemo;
 /**
  * Represent a 2-tuple of (int x, int y)
  */
-public class TwoNumberTuple implements NumberTuple {
+public class TwoNumberTuple implements NumberTuple, Cloneable {
     protected int x;
     protected int y;
 
@@ -68,5 +68,10 @@ public class TwoNumberTuple implements NumberTuple {
         }
         TwoNumberTuple n = (TwoNumberTuple) obj;
         return n.getValue(0) == this.x && n.getValue(1) == this.y;
+    }
+
+    @Override
+    protected Object clone() {
+        return new TwoNumberTuple(x, y);
     }
 }

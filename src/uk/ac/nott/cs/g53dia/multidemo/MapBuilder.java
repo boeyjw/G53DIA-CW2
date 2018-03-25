@@ -54,7 +54,8 @@ public class MapBuilder {
         }
         if(t.getValue(0) != REJECTED && entityType == EntityChecker.STATION && entity.hasTask()) {
             globalmap.get(EntityChecker.TASKEDSTATION).remove(entity);
-            globalmap.get(EntityChecker.TASKEDSTATION).add(globalmap.get(EntityChecker.STATION).get(Math.floorDiv(t.getValue(0), 10) - 1));
+            // TODO: ArrayOutOfBounds error
+            globalmap.get(EntityChecker.TASKEDSTATION).add(globalmap.get(EntityChecker.STATION).get(Math.floorDiv(t.getValue(0), 10) - 2));
         }
 
         return t;
@@ -81,16 +82,16 @@ public class MapBuilder {
      * If entity is last seen and Tanker is not on the entity, only last seen will be assigned
      * @param t return status from {@link MapBuilder#simpleAdd(CoreEntity)} or {@link MapBuilder#addNonDuplicativePositions(CoreEntity)}
      * @param timestep The current timestep
-     * @param tankerEntityHash The entity hash where the Tanker is on
+     * @param entityUnderTankerHash The entity hash where the Tanker is on
      */
-    public void setLastSeenVisited(NumberTuple t, long timestep, int tankerEntityHash) {
+    public void setLastSeenVisited(NumberTuple t, long timestep, int entityUnderTankerHash) {
         if(t.getValue(0) % 2 != EXIST) {
             return;
         }
 
         int ind = Math.floorDiv(t.getValue(0), 10) - 1;
         // Tanker visiting this entity
-        if(globalmap.get(t.getValue(1)).get(ind).getEntityHash() == tankerEntityHash) {
+        if(globalmap.get(t.getValue(1)).get(ind).getEntityHash() == entityUnderTankerHash) {
             globalmap.get(t.getValue(1)).get(ind).setLastVisitedSeen(timestep);
             globalmap.get(t.getValue(1)).get(ind).incTimesVisited();
         }
@@ -105,11 +106,11 @@ public class MapBuilder {
      * @param entity Observed entity
      * @param replace True to allow duplicates in the representation
      * @param timestep Current timestep
-     * @param tankerEntityHash Hash of the entity under the Tanker
+     * @param entityUnderTankerHash Hash of the entity under the Tanker
      */
-    public void update(CoreEntity entity, boolean replace, long timestep, int tankerEntityHash) {
+    public void update(CoreEntity entity, boolean replace, long timestep, int entityUnderTankerHash) {
         NumberTuple t = replace ? simpleAdd(entity) : addNonDuplicativePositions(entity);
-        setLastSeenVisited(t, timestep, tankerEntityHash);
+        setLastSeenVisited(t, timestep, entityUnderTankerHash);
     }
 
     @Override
@@ -117,31 +118,31 @@ public class MapBuilder {
         StringBuilder sb = new StringBuilder();
         sb.append("Fuelpump: ");
         for(CoreEntity e : globalmap.get(EntityChecker.FUELPUMP)) {
-            sb.append(e.getPosition().toString());
+            sb.append(e.getEntity().getPoint().toString());
             sb.append("\t");
         }
         sb.append("\n");
         sb.append("Well: ");
         for(CoreEntity e : globalmap.get(EntityChecker.WELL)) {
-            sb.append(e.getPosition().toString());
+            sb.append(e.getEntity().getPoint().toString());
             sb.append("\t");
         }
         sb.append("\n");
         sb.append("Station: ");
         for(CoreEntity e : globalmap.get(EntityChecker.STATION)) {
-            sb.append(e.getPosition().toString());
+            sb.append(e.getEntity().getPoint().toString());
             sb.append("\t");
         }
         sb.append("\n");
         sb.append("Tasked Station: ");
         for(CoreEntity e : globalmap.get(EntityChecker.TASKEDSTATION)) {
-            sb.append(e.getPosition().toString());
+            sb.append(e.getEntity().getPoint().toString());
             sb.append("\t");
         }
         sb.append("\n");
         sb.append("Tanker: ");
         for(CoreEntity e : globalmap.get(EntityChecker.TANKER)) {
-            sb.append(e.getPosition().toString());
+            sb.append(e.getEntity().getPoint().toString());
             sb.append("\t");
         }
         sb.append("\n");

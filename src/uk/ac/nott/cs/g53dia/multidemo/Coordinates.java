@@ -44,7 +44,7 @@ public class Coordinates extends TwoNumberTuple {
                 Math.abs(target.getValue(1) - this.getValue(1)));
     }
 
-    public void coordinateShiftBy(NumberTuple otherNumberTuple, char operation) {
+    public Coordinates coordinateShiftBy(NumberTuple otherNumberTuple, char operation) {
         switch (operation) {
             case PLUS:
                 this.x += otherNumberTuple.getValue(0);
@@ -57,6 +57,8 @@ public class Coordinates extends TwoNumberTuple {
             default:
                 throw new IllegalArgumentException("Operation out of scope");
         }
+
+        return this;
     }
 
     @Override
@@ -71,5 +73,10 @@ public class Coordinates extends TwoNumberTuple {
     @Override
     public String toString() {
         return "(" + x + ", " + y + ")";
+    }
+
+    @Override
+    protected Coordinates clone() {
+        return new Coordinates(x, y);
     }
 }

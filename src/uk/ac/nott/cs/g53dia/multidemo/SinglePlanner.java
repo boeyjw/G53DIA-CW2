@@ -12,7 +12,7 @@ public class SinglePlanner extends Planner {
         int nextMove = EntityChecker.DUMMY;
 
         if(!super.acceptableFuelLevel(tankerStatus.getValue(0),
-                super.getClosestEntityDistanceTo(map.get(EntityChecker.FUELPUMP), tc.getEntityUnderTankerAsCE(timestep)))) {
+                super.getClosestEntityDistanceTo(map.get(EntityChecker.FUELPUMP), tc.getEntityUnderTanker()))) {
             nextMove = EntityChecker.FUELPUMP;
         }
         else if(!super.acceptableWasteLevel(tankerStatus.getValue(1))) {

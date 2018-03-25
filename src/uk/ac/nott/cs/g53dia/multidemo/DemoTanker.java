@@ -27,10 +27,7 @@ public class DemoTanker extends Tanker {
     private Hashtable<Integer, List<CoreEntity>> entities;
     private List<CoreEntity> fuelpump, well, station, taskedStation;
     private Deque<CoreEntity> moves;
-
-    // Mapping objects
-    private MapBuilder mapper;
-    private MapBuilder history;
+    private List<CoreEntity> history;
 
     // Behaviour objects
     private Explorer explorer;
@@ -44,7 +41,8 @@ public class DemoTanker extends Tanker {
         this.r = r;
         l = new Log(true);
 
-        tc = new TankerCoordinator(tankerID);
+        tc = new TankerCoordinator(this, tankerID);
+        DemoFleet.allTankers.put(tankerID, tc);
 
         entities = new Hashtable<>();
         fuelpump = new ArrayList<>();
@@ -52,9 +50,7 @@ public class DemoTanker extends Tanker {
         station = new ArrayList<>();
         taskedStation = new ArrayList<>();
         moves = new ArrayDeque<>();
-
-        mapper = new MapBuilder();
-        history = new MapBuilder();
+        history = new LinkedList<>();
 
         explorer = new Explorer(this.r);
     }
@@ -66,13 +62,23 @@ public class DemoTanker extends Tanker {
      * point it returns to a fuel pump to refuel.
      */
     public Action senseAndAct(Cell[][] view, long timestep) {
-        tc.setEntityUnderTanker(getCurrentCell(view));
+        // Init
+        tc.checkActionFailed(actionFailed);
+        tc.setTankerStatus(this, new EntityNode(getCurrentCell(view), tc.getTankerCoordinate(), timestep),
+                moves.isEmpty() ? TankerCoordinator.NOACTION : tc.setCurrentAction(moves.peekFirst()), timestep);
+        DemoFleet.history.get(tankerID).add(getCurrentCell(view).getPoint().toString());
+
         // TODO: Add to global map
         spiralScanView(view, timestep);
+        tc.setClosestFuelWell(
+                fuelpump.isEmpty() ? null : fuelpump.get(fuelpump.size() - 1),
+                well.isEmpty() ? null : well.get(well.size() - 1)
+        );
         cleanup();
         // TODO: Things to do
         int rdir = r.nextInt(8);
-        tc.moveActionTankerDisplace(rdir, actionFailed);
+        tc.moveActionTankerDisplace(rdir);
+
         return new MoveAction(rdir);
     }
 
@@ -138,16 +144,18 @@ public class DemoTanker extends Tanker {
      * @param timestep The current timestep in the simulation
      */
     private void binEntitiesToStack(Cell entity, int x, int y, long timestep) {
-        CoreEntity node = new EntityNode(entity, x, y, timestep);
+        CoreEntity node = new EntityNode(entity, new Coordinates(x, y).coordinateShiftBy(tc.getTankerCoordinate(), '+'), timestep);
         node.setBearing(Calculation.targetBearing(tc.getTankerCoordinate(), node.getCoord()));
         if(node.getBearing() == Calculation.ONTANKER) {
             node.setFirstVisited(timestep);
         }
-        if(node.getBearing() == Calculation.ONTANKER) {
+        if(/*!EntityChecker.isEmptyCell(entity) || */node.getBearing() == Calculation.ONTANKER) {
             l.dc(node.toString());
-            l.d("True Coordinate: " + node.getEntity().getPoint().toString());
+            l.d("True Coordinate: " + entity.getPoint().toString());
+            l.d("Action Failed: " + actionFailed);
             l.d("");
         }
+        DemoFleet.mapper.update(node, false, timestep, tc.getEntityUnderTanker().getEntityHash());
         if(EntityChecker.isFuelPump(entity)) {
             fuelpump.add(node);
         }
@@ -160,7 +168,6 @@ public class DemoTanker extends Tanker {
         else if(EntityChecker.isWell(entity)) {
             well.add(node);
         }
-        mapper.update(node, false, timestep, tc.getEntityUnderTanker().hashCode());
     }
 
     private FallibleAction returnAction(Cell[][] view) {
@@ -172,17 +179,17 @@ public class DemoTanker extends Tanker {
                 if(Explorer.explorerMode) {
                     explorerDirection = explorer.getAndUpdateDirection();
                 }
-                history.simpleAdd(moves.removeFirst());
+                history.add(moves.removeFirst());
                 l.d("MOVES: REFUEL" + " => " + c.getClass() + " @ " + c.hashCode());
                 return new RefuelAction();
             }
             else if(EntityChecker.isWell(c)) {
-                history.simpleAdd(moves.removeFirst());
+                history.add(moves.removeFirst());
                 l.d("MOVES: DUMP" + " => " + c.getClass() + " @ " + c.hashCode());
                 return new DisposeWasteAction();
             }
             else if(EntityChecker.isStation(c) && getWasteCapacity() > 0) {
-                history.simpleAdd(moves.removeFirst());
+                history.add(moves.removeFirst());
                 if(((Station) getCurrentCell(view)).getTask() != null) {
                     l.d("MOVES: LOAD" + " => " + c.getClass() + " @ " + c.hashCode());
                     return new LoadWasteAction(((Station) getCurrentCell(view)).getTask());
@@ -190,7 +197,7 @@ public class DemoTanker extends Tanker {
             }
             else { //Empty cell
                 l.d("MOVES: EMPTY CELL" + " => " + c.getClass() + " @ " + c.hashCode());
-                history.simpleAdd(moves.removeFirst());
+                history.add(moves.removeFirst());
             }
         }
 
@@ -199,10 +206,6 @@ public class DemoTanker extends Tanker {
 
     public TankerCoordinator getTC() {
         return tc;
-    }
-
-    public Hashtable<Integer, List<CoreEntity>> getGlobalMap() {
-        return mapper.getGlobalmap();
     }
 
     private void cleanup() {

@@ -15,16 +15,12 @@ public class Explorer extends Planner {
     private long startExplorerTimestep;
     private long endExplorerTimeStep;
 
-    private MapBuilder exploitableAreas;
-
     public Explorer(Random r) {
         crossDirectionMovement = new HashMap<>();
         init();
         direction = r.nextInt(Threshold.TOTAL_DIRECTION_BOUND.getThreshold());
         startExplorerTimestep = 0;
         endExplorerTimeStep = 0;
-
-        exploitableAreas = new MapBuilder();
     }
 
     /**
