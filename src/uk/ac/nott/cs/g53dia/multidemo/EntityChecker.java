@@ -51,8 +51,6 @@ public class EntityChecker {
         return entity instanceof EmptyCell;
     }
 
-    public static boolean isTaskedStation(Cell entity) { return isStation(entity) && hasTaskStation(entity); }
-
     public static boolean hasTaskStation(Cell station) {
         return isStation(station) && ((Station) station).getTask() != null;
     }
@@ -69,8 +67,14 @@ public class EntityChecker {
      * @return Entity type in string
      */
     public static String entityToString(Cell entity, int entityConstantType) {
-        if(isStation(entity) || entityConstantType == STATION)
-            return "Station";
+        if(isStation(entity) || entityConstantType == STATION || entityConstantType == TASKEDSTATION) {
+            if(hasTaskStation(entity) || entityConstantType == TASKEDSTATION) {
+                return "Tasked Station";
+            }
+            else {
+                return "Station";
+            }
+        }
         else if(isWell(entity) || entityConstantType == WELL)
             return "Well";
         else if(isFuelPump(entity) || entityConstantType == FUELPUMP)

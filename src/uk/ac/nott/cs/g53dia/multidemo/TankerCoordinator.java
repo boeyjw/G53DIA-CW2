@@ -1,7 +1,12 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
+import uk.ac.nott.cs.g53dia.multilibrary.Cell;
 import uk.ac.nott.cs.g53dia.multilibrary.MoveAction;
+import uk.ac.nott.cs.g53dia.multilibrary.Station;
 import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
+
+import java.util.Deque;
+import java.util.List;
 
 public class TankerCoordinator {
     public static int FATAL_ERROR = Integer.MIN_VALUE;
@@ -58,14 +63,51 @@ public class TankerCoordinator {
 
     public void moveTowardsActionTankerDisplace(CoreEntity towardsEntity) {
         NumberTuple ddTuple = Calculation.diagonalDistanceTuple(this.tankerCoordinate, towardsEntity.getCoord());
-        if (ddTuple.getValue(0) != 0 || ddTuple.getValue(1) != 0) { // Tanker on entity
+        if (ddTuple.getValue(0) != 0 || ddTuple.getValue(1) != 0) { // Tanker not on entity
             moveActionTankerDisplace(towardsEntity.getBearing());
         }
     }
 
-    public void checkActionFailed(boolean actionFailed) {
+    public void checkActionFailed(boolean actionFailed, Deque<CoreEntity> moves, Cell currentCell, Tanker t, CoreEntity historyTail) {
         if (actionFailed) {
-            tankerCoordinate = tankerCoordinateBackup.clone();
+            if (historyTail != null && currentCell.getPoint().hashCode() == historyTail.getEntity().getPoint().hashCode()) {
+                System.out.println("Tanker Coordinate backup inner: " + tankerCoordinateBackup);
+                switch (EntityChecker.getEntityType(currentCell, false)) {
+                    case EntityChecker.FUELPUMP:
+                        if (t.getFuelLevel() < Tanker.MAX_WASTE - 1) {
+                            moves.addFirst(historyTail);
+                            tankerCoordinateBackup = tankerCoordinate = moves.peekFirst().getCoord();
+                        }
+                        else {
+                            tankerCoordinate = tankerCoordinateBackup.clone();
+                        }
+                        break;
+                    case EntityChecker.WELL:
+                        if (t.getWasteLevel() != 0) {
+                            moves.addFirst(historyTail);
+                            tankerCoordinateBackup = tankerCoordinate = moves.peekFirst().getCoord();
+                        }
+                        else {
+                            tankerCoordinate = tankerCoordinateBackup.clone();
+                        }
+                        break;
+                    case EntityChecker.TASKEDSTATION:
+                        if(((Station) currentCell).getTask() != null) {
+                            moves.addFirst(historyTail);
+                            tankerCoordinateBackup = tankerCoordinate = moves.peekFirst().getCoord();
+                        }
+                        else {
+                            tankerCoordinate = tankerCoordinateBackup.clone();
+                        }
+                        break;
+                    default:
+                        tankerCoordinate = tankerCoordinateBackup.clone();
+                        break;
+                }
+            }
+            else {
+                tankerCoordinate = tankerCoordinateBackup.clone();
+            }
         }
     }
 
@@ -159,11 +201,54 @@ public class TankerCoordinator {
     }
 
     public void setClosestFuelWell(CoreEntity fuelpump, CoreEntity well) {
-        if(fuelpump != null) {
+        CoreEntity tmp;
+        if(fuelpump == null) {
+            tmp = getClosest(EntityChecker.FUELPUMP);
+            if(tmp != null && tankerCoordinate.distanceToCoordinate(this.closestObservableFuelpump.getCoord()) > tankerCoordinate.distanceToCoordinate(tmp.getCoord())) {
+                this.closestObservableFuelpump = tmp;
+            }
+        }
+        else {
             this.closestObservableFuelpump = fuelpump;
         }
-        if(well != null) {
+        if(well == null) {
+            tmp = getClosest(EntityChecker.WELL);
+            if(tmp != null && this.closestObservableWell != null &&
+                    tankerCoordinate.distanceToCoordinate(this.closestObservableWell.getCoord()) > tankerCoordinate.distanceToCoordinate(tmp.getCoord())) {
+                this.closestObservableWell = tmp;
+            }
+        }
+        else {
             this.closestObservableWell = well;
+        }
+        if (this.closestObservableWell != null) {
+            if (this.closestObservableWell.getCoord().distanceToCoordinate(this.closestObservableFuelpump.getCoord()) > 20) {
+                this.closestObservableWell = null;
+            }
+        }
+    }
+
+    private CoreEntity getClosest(int entityType) {
+        int ind = -1;
+        int argmin = -1;
+        int min = Integer.MAX_VALUE;
+
+        for (CoreEntity c : DemoFleet.mapper.getEntityMap(entityType)) {
+            ind++;
+            int dist = tankerCoordinate.distanceToCoordinate(c.getCoord());
+            if (dist < min) {
+                min = dist;
+                argmin = ind;
+            }
+        }
+
+        CoreEntity closestEntity = argmin == -1 ? null : DemoFleet.mapper.getEntityMap(entityType).get(ind);
+        if(closestEntity == null) {
+            return null;
+        }
+        else {
+            closestEntity.setBearing(Calculation.targetBearing(tankerCoordinate, closestEntity.getCoord()));
+            return closestEntity;
         }
     }
 
@@ -209,5 +294,4 @@ public class TankerCoordinator {
 
         return sb.toString();
     }
-
 }

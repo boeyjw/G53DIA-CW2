@@ -1,57 +1,92 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
-import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.List;
 
 public class ClusterMapBuilder extends MapBuilder {
-    public static final int SMALL_CLUSTER_RADIUS = 10;
-    public static final int MEDIUM_CLUSTER_RADIUS = 15;
-    public static final int OBSERVABLE_CLUSTER_RADIUS = 20;
+    public static int CLUSTER_RANGE = 20;
 
-    private Hashtable<Integer, List<ClusterEntity>> clusterMap;
+    private List<ClusterEntity> clusterMap;
+    private int[] condition;
 
     ClusterMapBuilder() {
-        clusterMap = new Hashtable<>();
-        clusterMap.put(SMALL_CLUSTER_RADIUS, new ArrayList<>());
-        clusterMap.put(MEDIUM_CLUSTER_RADIUS, new ArrayList<>());
-        clusterMap.put(OBSERVABLE_CLUSTER_RADIUS, new ArrayList<>());
+        clusterMap = new ArrayList<>();
+
+        condition = new int[3];
+        condition[0] = 1; // min number of fuelpump
+        condition[1] = 1; // min number of wells
+        condition[2] = 5; // min number of station
     }
 
-    public boolean addCluster(CoreEntity fuelpump, List<CoreEntity> entities) {
+    public int buildCluster(Hashtable<Integer, List<CoreEntity>> map) {
+        int status = REJECTED;
+        List<CoreEntity> mergedmap = new ArrayList<>();
+        mergedmap.addAll(map.get(EntityChecker.FUELPUMP));
+        mergedmap.addAll(map.get(EntityChecker.WELL));
+        mergedmap.addAll(map.get(EntityChecker.STATION));
+
+        for(CoreEntity fp : map.get(EntityChecker.FUELPUMP)) {
+            status = hasCluster(fp) ? updateCluster(fp, mergedmap) : addCluster(fp, mergedmap);
+        }
+
+        return status;
+    }
+
+    private int addCluster(CoreEntity fuelpump, List<CoreEntity> entities) {
+        ClusterEntity ce = new ClusterEntity(fuelpump.getEntity(), fuelpump.getCoord(), fuelpump.getFirstSeen(), condition);
+        ce.add(fuelpump);
+
+        for(CoreEntity e : entities) {
+            if(isWithinClusterRange(fuelpump, e)) {
+                ce.add(e);
+            }
+        }
+
+        if(ce.validateCluster()) {
+            clusterMap.add(ce);
+            return ADD;
+        }
+
+        return REJECTED;
+    }
+
+    private int updateCluster(CoreEntity fuelpump, List<CoreEntity> entities) {
+        int ind = -1;
+        for(ClusterEntity ce : clusterMap) {
+            ind++;
+            if(ce.getEntity().equals(fuelpump.getEntity())) {
+                break;
+            }
+        }
+
+        ClusterEntity ce = clusterMap.get(ind);
+        boolean hasAdd = false;
+        for(CoreEntity e : entities) {
+            if(isWithinClusterRange(ce, e)) {
+                hasAdd = ce.add(e);
+            }
+        }
+
+        return hasAdd ? ADD : EXIST;
+    }
+
+    private boolean isWithinClusterRange(CoreEntity fuelpump, CoreEntity entity) {
+        return !fuelpump.equals(entity) && fuelpump.getCoord().distanceToCoordinate(entity.getCoord()) <= CLUSTER_RANGE;
+    }
+
+    public boolean hasCluster(CoreEntity fuelpump) {
+        for(ClusterEntity ce : clusterMap) {
+            if(ce.getEntity().equals(fuelpump.getEntity())) {
+                return true;
+            }
+        }
+
         return false;
     }
 
-    public boolean hasCluster(int clusterRadius, CoreEntity fuelpump) {
-        return clusterMap.get(clusterRadius).contains(fuelpump);
-    }
-
-    public ClusterEntity getCluster(int clusterRadius, CoreEntity fuelpump) {
-        for(ClusterEntity c : clusterMap.get(clusterRadius)) {
-            if(fuelpump.equals(c)) {
-                return c;
-            }
-        }
-
-        return null;
-    }
-
-    private int getClosestEntityDistance(CoreEntity source, List<CoreEntity> targets) {
-        if(targets.isEmpty()) {
-            return Integer.MAX_VALUE;
-        }
-        else if(targets.size() == 1) {
-            return source.getCoord().distanceToCoordinate(targets.get(0).getCoord());
-        }
-
-        int min = Integer.MAX_VALUE;
-        for(CoreEntity t : targets) {
-            int dist = source.getCoord().distanceToCoordinate(t.getCoord());
-            if(dist < min) {
-                min = dist;
-            }
-        }
-
-        return min;
+    public List<ClusterEntity> getClusterMap() {
+        return clusterMap;
     }
 }

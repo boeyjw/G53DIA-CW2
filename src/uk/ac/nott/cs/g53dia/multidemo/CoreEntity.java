@@ -25,8 +25,10 @@ public abstract class CoreEntity {
     protected int wasteRemaining;
     protected int timesVisited;
     protected int timesSeen;
+    protected boolean hasTankerMoveTowards;
+    protected NumberTuple tankerMoveTowardsInformation;
 
-    CoreEntity(@Nullable Cell entity, @NotNull Coordinates coord, @NotNull long firstSeen) {
+    CoreEntity(@Nullable Cell entity, @Nullable Coordinates coord, @Nullable long firstSeen) {
         this.entity = entity;
         this.entityHash = entity == null ? Integer.MIN_VALUE : entity.getPoint().hashCode();
         this.coord = coord;
@@ -38,10 +40,17 @@ public abstract class CoreEntity {
         this.wasteRemaining = this.hasTask ? ((Station) entity).getTask().getWasteRemaining() : Integer.MIN_VALUE;
         this.timesVisited = 1;
         this.timesSeen = 1;
+        this.hasTankerMoveTowards = false;
+        this.tankerMoveTowardsInformation = new TwoNumberTuple(Integer.MIN_VALUE, Integer.MIN_VALUE);
     }
 
-    CoreEntity(@Nullable Cell entity, @NotNull int x, @NotNull int y, @NotNull long firstSeen) {
+    public CoreEntity(@Nullable Cell entity, @NotNull int x, @NotNull int y, @NotNull long firstSeen) {
         this(entity, new Coordinates(x, y), firstSeen);
+    }
+
+    CoreEntity(int bearing) {
+        this(null, null, Integer.MIN_VALUE);
+        this.bearing = bearing;
     }
 
     public Cell getEntity() {
@@ -120,6 +129,20 @@ public abstract class CoreEntity {
 
     public boolean canLoadAllWaste(int tankerWasteCapacity) { return hasTask && tankerWasteCapacity + wasteRemaining <= Tanker.MAX_WASTE; }
 
+    public boolean getHasTankerMoveTowards() { return hasTankerMoveTowards; }
+
+    public void tankerIsHere() {
+        hasTankerMoveTowards = false;
+        tankerMoveTowardsInformation = new TwoNumberTuple(Integer.MIN_VALUE, Integer.MIN_VALUE);
+    }
+
+    public NumberTuple getTankerMoveTowardsInformation() { return tankerMoveTowardsInformation; }
+
+    public void setTankerMoveTowardsInformation(int tankerID, int initialDistance) {
+        hasTankerMoveTowards = true;
+        this.tankerMoveTowardsInformation = new TwoNumberTuple(tankerID, initialDistance);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if(!(obj instanceof CoreEntity)) {
@@ -127,8 +150,8 @@ public abstract class CoreEntity {
         }
         CoreEntity c = (CoreEntity) obj;
 
-        return c.getEntity() == null && entity == null && isDirectionalEntity() == c.isDirectionalEntity() ?
-                bearing == c.getBearing() : entity.equals((Cell) ((CoreEntity) obj).getEntity());
+        return isDirectionalEntity() == c.isDirectionalEntity() && c.getEntity() == null && entity == null ?
+                bearing == c.getBearing() : entity.equals(c.getEntity());
     }
 
     @Override

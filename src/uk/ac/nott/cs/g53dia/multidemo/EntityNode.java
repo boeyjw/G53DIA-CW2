@@ -31,6 +31,10 @@ public class EntityNode extends CoreEntity {
         this(entity, new Coordinates(x, y), firstVisited);
     }
 
+    EntityNode(int bearing) {
+        super(bearing);
+    }
+
     public int getGscore() {
         return gscore;
     }

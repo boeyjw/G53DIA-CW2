@@ -2,6 +2,8 @@ package uk.ac.nott.cs.g53dia.multidemo;
 
 import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
 
+import java.util.List;
+
 /**
  * Utility class to store coordinates in tuple form
  */
@@ -59,6 +61,25 @@ public class Coordinates extends TwoNumberTuple {
         }
 
         return this;
+    }
+
+    public int getClosestEntityDistance(List<CoreEntity> targets) {
+        if(targets.isEmpty()) {
+            return Integer.MAX_VALUE;
+        }
+        else if(targets.size() == 1) {
+            return this.distanceToCoordinate(targets.get(0).getCoord());
+        }
+
+        int min = Integer.MAX_VALUE;
+        for(CoreEntity t : targets) {
+            int dist = this.distanceToCoordinate(t.getCoord());
+            if(dist < min) {
+                min = dist;
+            }
+        }
+
+        return min;
     }
 
     @Override

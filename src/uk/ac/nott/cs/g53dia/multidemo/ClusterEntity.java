@@ -1,65 +1,84 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
-import com.sun.istack.internal.Nullable;
 import uk.ac.nott.cs.g53dia.multilibrary.Cell;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
 
 public class ClusterEntity extends CoreEntity {
-    private List<CoreEntity> cluster;
-    private boolean hasVisited;
-    private int numberOfFuelPumps;
-    private int numberOfWells;
-    private int numberOfStations;
-    private int effectiveClusterRadius;
+    private Hashtable<Integer, List<CoreEntity>> cluster;
+    private boolean tankerMovingTowards;
+    private int[] condition;
 
-    ClusterEntity(Cell entity, int x, int y, long firstSeen) {
-        this(entity, x, y, firstSeen, null, Integer.MIN_VALUE);
+    ClusterEntity(Cell entity, Coordinates coord, long firstSeen, int[] condition) {
+        super(entity, coord, firstSeen);
+        if(condition.length != 3) {
+            throw new IllegalArgumentException("Condition must on be length of 3 where number of [fuelpump, well, station]");
+        }
+
+        cluster = new Hashtable<>();
+        cluster.put(EntityChecker.FUELPUMP, new ArrayList<>());
+        cluster.put(EntityChecker.WELL, new ArrayList<>());
+        cluster.put(EntityChecker.STATION, new ArrayList<>());
+        this.condition = condition;
+        tankerMovingTowards = false;
     }
 
-    ClusterEntity(Cell entity, int x, int y, long firstSeen, List<CoreEntity> cluster, int effectiveClusterRadius) {
-        super(entity, x, y, firstSeen);
-        this.cluster = new ArrayList<>();
-        this.hasVisited = false;
-        this.effectiveClusterRadius = effectiveClusterRadius;
+    public boolean add(CoreEntity entity) {
+        int entityType = EntityChecker.getEntityType(entity.getEntity(), true);
 
-
+        if(cluster.get(entityType).contains(entity)) {
+            return false;
+        }
+        else {
+            cluster.get(entityType).add(entity);
+            return true;
+        }
     }
 
-    public void addCluster(List<CoreEntity> cluster) {
-        CoreEntity c = cluster.get(0);
-        for(Iterator<CoreEntity> iter = cluster.iterator(); iter.hasNext(); ) {
-            c = iter.next();
-            if(super.getEntity().equals(c.getEntity())) {
-                iter.remove();
-                break;
+    public boolean isTankerMovingTowards() {
+        return tankerMovingTowards;
+    }
+
+    public void setTankerMovingTowards(boolean tankerMovingTowards) {
+        this.tankerMovingTowards = tankerMovingTowards;
+    }
+
+    public List<CoreEntity> getEntityCluster(int entityType) {
+        return cluster.get(entityType);
+    }
+
+    public CoreEntity getClosestEntity(Coordinates tankerCoordinate, int entityType) {
+        int ind = -1;
+        int argmin = -1;
+        int min = Integer.MAX_VALUE;
+
+        for(CoreEntity c : cluster.get(entityType)) {
+            ind++;
+            int dist = tankerCoordinate.distanceToCoordinate(c.getCoord());
+            if(dist < min) {
+                argmin = ind;
+                min = dist;
             }
         }
-        this.cluster.add(c);
-        this.cluster.addAll(cluster);
+
+        return cluster.get(entityType).get(argmin);
     }
 
-    public List<CoreEntity> getCluster() {
-        return cluster;
+    public boolean validateCluster() {
+        int[] n = getNumberOfEntities();
+
+        return n[0] >= condition[0] && n[1] >= condition[1] && n[2] >= condition[2];
     }
 
-    public int getEffectiveClusterRadius() {
-        return effectiveClusterRadius;
-    }
+    public int[] getNumberOfEntities() {
+        int[] n = new int[4];
+        n[0] = cluster.get(EntityChecker.FUELPUMP).size();
+        n[1] = cluster.get(EntityChecker.WELL).size();
+        n[2] = cluster.get(EntityChecker.STATION).size();
+        n[3] = n[0] + n[1] + n[2];
 
-    public int getNumberOfStations() {
-        return numberOfStations;
-    }
-
-    public int getNumberOfWells() {
-        return numberOfWells;
-    }
-
-    public int getNumberOfFuelPumps() {
-        return numberOfFuelPumps;
-    }
-
-    public int getNumberOfEntities() {
-        return numberOfFuelPumps + numberOfWells + numberOfStations;
+        return n;
     }
 }

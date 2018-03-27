@@ -7,7 +7,11 @@ public class TwoNumberTuple implements NumberTuple, Cloneable {
     protected int x;
     protected int y;
 
-    public TwoNumberTuple(int x, int y) {
+    TwoNumberTuple() {
+        this(Integer.MIN_VALUE, Integer.MIN_VALUE);
+    }
+
+    TwoNumberTuple(int x, int y) {
         this.x = x;
         this.y = y;
     }
