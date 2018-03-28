@@ -1,5 +1,7 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
+import uk.ac.nott.cs.g53dia.multilibrary.Station;
+
 import java.util.*;
 
 /**
@@ -62,6 +64,9 @@ public class MapBuilder {
                     map.get(entityType).get(ind).setLastSeen(entity.getFirstSeen());
                 }
                 map.get(entityType).get(ind).incTimesSeen();
+                if(EntityChecker.isStation(entity.getEntity()) && ((Station) entity.getEntity()).getTask() != null) {
+                    map.get(entityType).get(ind).setWasteRemaining(((Station) entity.getEntity()).getTask().getWasteRemaining());
+                }
 
                 return EXIST;
             }
@@ -107,31 +112,25 @@ public class MapBuilder {
         StringBuilder sb = new StringBuilder();
         sb.append("Fuelpump: ");
         for(CoreEntity e : map.get(EntityChecker.FUELPUMP)) {
-            sb.append(e.getEntity().getPoint().toString());
+            sb.append(e.getEntity().getPoint());
             sb.append("\t");
         }
         sb.append("\n");
         sb.append("Well: ");
         for(CoreEntity e : map.get(EntityChecker.WELL)) {
-            sb.append(e.getEntity().getPoint().toString());
+            sb.append(e.getEntity().getPoint());
             sb.append("\t");
         }
         sb.append("\n");
         sb.append("Station: ");
         for(CoreEntity e : map.get(EntityChecker.STATION)) {
-            sb.append(e.getEntity().getPoint().toString());
+            sb.append(e.getEntity().getPoint());
             sb.append("\t");
         }
         sb.append("\n");
         sb.append("Tasked Station: ");
         for(CoreEntity e : map.get(EntityChecker.TASKEDSTATION)) {
-            sb.append(e.getEntity().getPoint().toString());
-            sb.append("\t");
-        }
-        sb.append("\n");
-        sb.append("Tanker: ");
-        for(CoreEntity e : map.get(EntityChecker.TANKER)) {
-            sb.append(e.getEntity().getPoint().toString());
+            sb.append(e.getEntity().getPoint());
             sb.append("\t");
         }
         sb.append("\n");

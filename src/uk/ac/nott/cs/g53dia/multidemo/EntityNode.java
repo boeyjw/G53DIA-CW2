@@ -7,10 +7,12 @@ import uk.ac.nott.cs.g53dia.multilibrary.Point;
  * Stores the entity in a node used for planning
  */
 public class EntityNode extends CoreEntity {
+    public static final int MAXIMUM_PENALTY = 99;
+
     private int gscore;
     private int hscore;
     private int fscore;
-    private float weight;
+    private double weight;
     private boolean visited;
     private int fuelConsumption;
 
@@ -19,9 +21,9 @@ public class EntityNode extends CoreEntity {
     public EntityNode(Cell entity, Coordinates coord, long firstVisited) {
         super(entity, coord, firstVisited);
         this.weight = 1; // No weight
-        this.gscore = Integer.MAX_VALUE;
-        this.hscore = Integer.MAX_VALUE;
-        this.fscore = Integer.MAX_VALUE;
+        this.gscore = 0;
+        this.hscore = 0;
+        this.fscore = 0;
         this.fuelConsumption = 0;
         this.parent = null;
         this.visited = false;
@@ -56,14 +58,14 @@ public class EntityNode extends CoreEntity {
     }
 
     public void calculateFscore() {
-        this.fscore = (int) Math.abs((hscore + gscore) * weight);
+        this.fscore = (int) Math.abs(gscore + (hscore * weight));
     }
 
-    public float getWeight() {
+    public double getWeight() {
         return weight;
     }
 
-    public void setWeight(int weight) {
+    public void setWeight(double weight) {
         this.weight = weight;
     }
 

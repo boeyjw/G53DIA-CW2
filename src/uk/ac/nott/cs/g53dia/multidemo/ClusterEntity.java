@@ -8,7 +8,6 @@ import java.util.List;
 
 public class ClusterEntity extends CoreEntity {
     private Hashtable<Integer, List<CoreEntity>> cluster;
-    private boolean tankerMovingTowards;
     private int[] condition;
 
     ClusterEntity(Cell entity, Coordinates coord, long firstSeen, int[] condition) {
@@ -22,7 +21,6 @@ public class ClusterEntity extends CoreEntity {
         cluster.put(EntityChecker.WELL, new ArrayList<>());
         cluster.put(EntityChecker.STATION, new ArrayList<>());
         this.condition = condition;
-        tankerMovingTowards = false;
     }
 
     public boolean add(CoreEntity entity) {
@@ -35,14 +33,6 @@ public class ClusterEntity extends CoreEntity {
             cluster.get(entityType).add(entity);
             return true;
         }
-    }
-
-    public boolean isTankerMovingTowards() {
-        return tankerMovingTowards;
-    }
-
-    public void setTankerMovingTowards(boolean tankerMovingTowards) {
-        this.tankerMovingTowards = tankerMovingTowards;
     }
 
     public List<CoreEntity> getEntityCluster(int entityType) {
@@ -80,5 +70,9 @@ public class ClusterEntity extends CoreEntity {
         n[3] = n[0] + n[1] + n[2];
 
         return n;
+    }
+
+    public EntityNode asEntityNode() {
+        return new EntityNode(getEntity(), getCoord(), getFirstSeen());
     }
 }

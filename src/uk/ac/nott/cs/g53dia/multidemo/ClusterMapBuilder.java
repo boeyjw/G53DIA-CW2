@@ -78,7 +78,7 @@ public class ClusterMapBuilder extends MapBuilder {
 
     public boolean hasCluster(CoreEntity fuelpump) {
         for(ClusterEntity ce : clusterMap) {
-            if(ce.getEntity().equals(fuelpump.getEntity())) {
+            if(ce.getEntity().getPoint().hashCode() == fuelpump.getEntity().getPoint().hashCode()) {
                 return true;
             }
         }
@@ -88,5 +88,18 @@ public class ClusterMapBuilder extends MapBuilder {
 
     public List<ClusterEntity> getClusterMap() {
         return clusterMap;
+    }
+
+    public void setTankerMovingTowards(CoreEntity fuelpump, int tankerID, int initialDistance) {
+        for(ClusterEntity ce : clusterMap) {
+            if(ce.getEntityHash() == fuelpump.getEntityHash()) {
+                ce.setTankerMoveTowardsInformation(tankerID, initialDistance);
+            }
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Clustermap size: " + clusterMap.size();
     }
 }

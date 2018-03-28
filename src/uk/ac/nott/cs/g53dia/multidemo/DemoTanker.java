@@ -29,6 +29,8 @@ public class DemoTanker extends Tanker {
     private List<CoreEntity> history;
 
     private Explorer explorer;
+    private Planner singleplanner;
+    private PlanController plancontroller;
 
 //    public DemoTanker() {
 //        this(new Random());
@@ -50,6 +52,9 @@ public class DemoTanker extends Tanker {
         history = new ArrayList<>();
 
         explorer = new Explorer();
+        plancontroller = new PlanController();
+        singleplanner = new SinglePlanner();
+
         moves.addFirst(explorer.getAndUpdateDirection(DemoFleet.explorationDirection));
         DemoFleet.explorationDirection.add(moves.peekFirst().getBearing());
     }
@@ -58,6 +63,7 @@ public class DemoTanker extends Tanker {
         l.d("");
         l.d("Timestep: " + timestep + "\t" + "TankerID: " + tc.getTankerID());
         // Init
+        cleanup();
         tc.checkActionFailed(actionFailed, moves, getCurrentCell(view), this, history.isEmpty() ? null : history.get(history.size() - 1));
         tc.setTankerStatus(this, new EntityNode(getCurrentCell(view), tc.getTankerCoordinate(), timestep),
                 moves.isEmpty() ? TankerCoordinator.NOACTION : tc.setCurrentAction(moves.peekFirst()), timestep);
@@ -73,36 +79,54 @@ public class DemoTanker extends Tanker {
                 well.isEmpty() ? null : well.get(well.size() - 1)
         );
         int clusterStatus = DemoFleet.clustermap.buildCluster(DemoFleet.mapper.getMap());
+        System.out.println("Cluster size: " + DemoFleet.clustermap.getClusterMap().size());
 
         // Planning Stage
-        explorer.plan(DemoFleet.mapper, DemoFleet.clustermap, entities, moves, tc, timestep);
+        if(timestep <= 300) {
+            explorer.plan(DemoFleet.mapper, DemoFleet.clustermap, entities, moves, tc, timestep);
+        }
+        else {
+            explorer.plan(DemoFleet.mapper, DemoFleet.clustermap, entities, moves, tc, timestep);
+
+            if(!tc.isMovingTowardsCluster()) {
+                DemoFleet.multiplanner.plan(DemoFleet.mapper, DemoFleet.clustermap, entities, moves, tc, timestep);
+            }
+            if(tc.isMovingTowardsCluster()  && !moves.peekFirst().isDirectionalEntity() &&
+                    moves.peekFirst().getEntityHash() == getCurrentCell(view).getPoint().hashCode()) {
+                tc.unsetMovingTowardsCluster();
+                DemoFleet.clustermap.unsetTankerMoveTowardsEntity(moves.peekFirst());
+            }
+            if(!tc.isMovingTowardsCluster() || moves.peekFirst().isDirectionalEntity()) {
+                singleplanner.plan(DemoFleet.mapper, DemoFleet.clustermap, entities, moves, tc, timestep);
+            }
+        }
+        plancontroller.plan(DemoFleet.mapper, DemoFleet.clustermap, entities, moves, tc, timestep);
+        l.dc("[");
+        for(CoreEntity e : moves) {
+            if(e.isDirectionalEntity()) {
+                l.dc("Direction: " + e.getBearing());
+            }
+            else {
+                l.dc(EntityChecker.entityToString(e.getEntity(), EntityChecker.DUMMY) + " " + e.getCoord());
+            }
+            l.dc("\t");
+        }
+        l.d("]");
 
         // End stage
         if(!moves.isEmpty()) {
             if(!moves.peekFirst().isDirectionalEntity()) {
                 moves.peekFirst().setBearing(Calculation.targetBearing(tc.getTankerCoordinate(), moves.peekFirst().getCoord()));
             }
-            else {
-                DemoFleet.explorationDirection.remove(tc.getTankerID());
-                DemoFleet.explorationDirection.add(tc.getTankerID(), moves.peekFirst().getBearing());
-            }
+            DemoFleet.explorationDirection.remove(tc.getTankerID());
+            DemoFleet.explorationDirection.add(tc.getTankerID(), moves.peekFirst().getBearing());
         }
-        cleanup();
         System.out.println("Tanker coordinate: " + tc.getTankerCoordinate());
         System.out.println("True coordinate: " + getCurrentCell(view).getPoint());
+        System.out.println("Tanker Score: " + getScore());
         if(!tc.getTankerCoordinate().toString().equals(getCurrentCell(view).getPoint().toString())) {
             System.out.println("Wrong coordinate");
-            System.exit(-1);
-        }
-        if(!moves.isEmpty()) {
-            for(CoreEntity e : moves) {
-                if(e.isDirectionalEntity()) {
-                    System.out.println("Exploration direction: " + e.getBearing());
-                }
-                else {
-                    System.out.println(EntityChecker.entityToString(e.getEntity(), EntityChecker.DUMMY));
-                }
-            }
+            System.exit(-10);
         }
 
         return returnAction(view);
@@ -216,7 +240,9 @@ public class DemoTanker extends Tanker {
             else if(EntityChecker.isStation(c) && getWasteCapacity() > 0) {
                 history.add(ts);
                 if(((Station) getCurrentCell(view)).getTask() != null) {
-                    DemoFleet.mapper.removeTaskedStation(ts);
+                    if(getWasteCapacity() >= ((Station) getCurrentCell(view)).getTask().getWasteRemaining()) {
+                        DemoFleet.mapper.removeTaskedStation(ts);
+                    }
                     l.d("MOVES: LOAD" + " => " + c.getClass() + " @ " + c.getPoint());
                     return new LoadWasteAction(((Station) getCurrentCell(view)).getTask());
                 }
@@ -225,6 +251,7 @@ public class DemoTanker extends Tanker {
                 l.d("MOVES: EMPTY CELL" + " => " + c.getClass() + " @ " + c.getPoint());
                 history.add(ts);
             }
+            DemoFleet.mapper.unsetTankerMoveTowardsEntity(ts);
         }
 
         if(moves.peekFirst().isDirectionalEntity()) {

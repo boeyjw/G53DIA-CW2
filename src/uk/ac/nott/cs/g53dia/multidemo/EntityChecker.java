@@ -81,6 +81,9 @@ public class EntityChecker {
             return "Fuel Pump";
         else if(isEmptyCell(entity) || entityConstantType == EMPTYCELL)
             return "Empty Cell";
+        else if(entity == null) {
+            return "DIRECTIONAL";
+        }
         else
             return "INVALID";
     }

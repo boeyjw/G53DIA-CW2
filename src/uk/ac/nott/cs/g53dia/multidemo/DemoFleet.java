@@ -8,13 +8,14 @@ public class DemoFleet extends Fleet {
     /** 
      * Number of tankers in the fleet
      */
-    private static int FLEET_SIZE = 9;
+    private static int FLEET_SIZE = 1;
 
     public static MapBuilder mapper;
     public static ClusterMapBuilder clustermap;
     public static Hashtable<Integer, TankerCoordinator> allTankers;
     public static Hashtable<Integer, List<String>> history;
     public static List<Integer> explorationDirection;
+    public static Planner multiplanner;
 
     public DemoFleet() {
         mapper = new MapBuilder();
@@ -22,6 +23,7 @@ public class DemoFleet extends Fleet {
         allTankers = new Hashtable<>();
         history = new Hashtable<>();
         explorationDirection = new LinkedList<>();
+        multiplanner = new Multiplanner();
 
         // Create the tankers
         for (int i = 0; i < FLEET_SIZE; i++) {

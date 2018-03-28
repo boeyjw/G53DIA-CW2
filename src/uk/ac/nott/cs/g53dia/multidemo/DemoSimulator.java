@@ -1,5 +1,8 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 import uk.ac.nott.cs.g53dia.multilibrary.*;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -37,6 +40,7 @@ public class DemoSimulator {
         Environment env = new Environment(Tanker.MAX_FUEL/2);
         //Create a fleet
         Fleet fleet = new DemoFleet();
+        int score = 0; // TODO:
         // Create a GUI window to show the fleet
 //        TankerViewer tv = new TankerViewer(fleet);
 //        tv.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
@@ -57,7 +61,7 @@ public class DemoSimulator {
                     a.execute(env, t);
                 } catch (OutOfFuelException ofe) {
                     System.err.println(ofe.getMessage());
-                    System.exit(-1);
+//                    System.exit(-1);
                 } catch (ActionFailedException afe) {
                     System.err.println(afe.getMessage() + " " + env.getTimestep());
                 }
@@ -66,6 +70,11 @@ public class DemoSimulator {
                 Thread.sleep(DELAY);
             } catch (Exception e) { }
         }
+
+        for(Tanker t : fleet) {
+            score += t.getScore();
+        }
+        System.out.println("Total for " + fleet.size() + " tankers: " + score + "\nAverage: " + score / fleet.size());
     }
 
 }

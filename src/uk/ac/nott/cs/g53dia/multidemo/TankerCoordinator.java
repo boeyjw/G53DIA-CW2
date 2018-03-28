@@ -33,6 +33,7 @@ public class TankerCoordinator {
     private int wasteLevel;
     private int posHashcode;
     private int currentAction;
+    private boolean movingTowardsCluster;
 
     // Closest important entities
     private CoreEntity closestObservableFuelpump;
@@ -51,6 +52,7 @@ public class TankerCoordinator {
         this.wasteLevel = t.getWasteLevel();
         this.posHashcode = t.getPosition().hashCode();
         this.currentAction = NOACTION;
+        this.movingTowardsCluster = false;
     }
 
     public static Coordinates getTankerViewRangeCoordinate() {
@@ -64,7 +66,7 @@ public class TankerCoordinator {
     public void moveTowardsActionTankerDisplace(CoreEntity towardsEntity) {
         NumberTuple ddTuple = Calculation.diagonalDistanceTuple(this.tankerCoordinate, towardsEntity.getCoord());
         if (ddTuple.getValue(0) != 0 || ddTuple.getValue(1) != 0) { // Tanker not on entity
-            moveActionTankerDisplace(towardsEntity.getBearing());
+            moveActionTankerDisplace(Calculation.targetBearing(this.tankerCoordinate, towardsEntity.getCoord()));
         }
     }
 
@@ -167,6 +169,7 @@ public class TankerCoordinator {
     public void setTankerStatus(Tanker t, CoreEntity entityUnderTanker, int currentAction, long timestep) {
         this.timestep = timestep;
         this.entityUnderTanker = entityUnderTanker;
+        entityUnderTanker.setBearing(Calculation.ONTANKER);
         fuelLevel = t.getFuelLevel();
         wasteLevel = t.getWasteLevel();
         posHashcode = t.getPosition().hashCode();
@@ -294,4 +297,15 @@ public class TankerCoordinator {
 
         return sb.toString();
     }
-}
+
+    public boolean isMovingTowardsCluster() {
+        return movingTowardsCluster;
+    }
+
+    public void setMovingTowardsCluster() {
+        this.movingTowardsCluster = true;
+    }
+
+    public void unsetMovingTowardsCluster() {
+        this.movingTowardsCluster = false;
+    }}

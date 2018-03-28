@@ -89,10 +89,6 @@ public abstract class CoreEntity {
         return wasteRemaining;
     }
 
-    public void setWasteRemaining(int wasteRemaining) {
-        this.wasteRemaining = wasteRemaining;
-    }
-
     public long getFirstVisited() { return firstVisited; }
 
     public long getFirstSeen() { return firstSeen; }
@@ -105,10 +101,13 @@ public abstract class CoreEntity {
 
     public void setLastVisitedSeen(long lastVisited) { this.lastSeen = this.lastVisited = lastVisited; }
 
+    public void setWasteRemaining(int wasteRemaining) { this.wasteRemaining = wasteRemaining; }
+
     public boolean reduceWasteRemaining(int wasteCollected) {
         this.wasteRemaining -= wasteCollected;
-        if (this.wasteRemaining < 0) {
+        if (this.hasTask && this.wasteRemaining <= 0) {
             this.wasteRemaining = 0;
+            this.hasTask = false;
             return false;
         } else {
             return true;

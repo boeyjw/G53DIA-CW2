@@ -14,6 +14,7 @@ public class Explorer extends Planner {
     private int direction;
     private long startExplorerTimestep;
     private long endExplorerTimeStep;
+    private int lastVisitedFuelpumpHashcode;
 
     public Explorer() {
         crossDirectionMovement = new HashMap<>();
@@ -21,6 +22,7 @@ public class Explorer extends Planner {
         direction = MoveAction.NORTHEAST;
         startExplorerTimestep = 0;
         endExplorerTimeStep = 0;
+        lastVisitedFuelpumpHashcode = Integer.MIN_VALUE;
     }
 
     /**
@@ -39,26 +41,41 @@ public class Explorer extends Planner {
     }
 
     @Override
-    public Deque<CoreEntity> plan(MapBuilder map, ClusterMapBuilder clustermap,
-                                  Hashtable<Integer, List<CoreEntity>> entities, Deque<CoreEntity> moves,
-                                  TankerCoordinator tc, long timestep) {
+    public Deque<CoreEntity> plan(MapBuilder map, ClusterMapBuilder clustermap, Hashtable<Integer, List<CoreEntity>> entities,
+                                  Deque<CoreEntity> moves, TankerCoordinator tc, long timestep) {
+        if(lastVisitedFuelpumpHashcode == Integer.MIN_VALUE) {
+            lastVisitedFuelpumpHashcode = tc.getClosestObservableFuelpump().getEntityHash();
+        }
         if (allowAddMove(moves, EntityChecker.FUELPUMP) &&
                 !super.acceptableFuelLevel(tc.getFuelLevel(), tc.getTankerCoordinate(), tc.getClosestObservableFuelpump().getCoord())) {
             moves.addFirst(tc.getClosestObservableFuelpump());
-            DemoFleet.mapper.setTankerMoveTowardsEntity(moves.peekFirst(), tc.getTankerID(), tc.getTankerCoordinate().distanceToCoordinate(moves.peekFirst().getCoord()));
         } else if (allowAddMove(moves, EntityChecker.WELL) && !super.acceptableWasteLevel(tc.getWasteLevel()) && tc.getClosestObservableWell() != null &&
                 super.acceptableFuelLevel(tc.getFuelLevel(),
                         distAtoCviaB(tc.getEntityUnderTanker(), tc.getClosestObservableWell(), tc.getClosestObservableFuelpump()))) {
             moves.addFirst(tc.getClosestObservableWell());
-            DemoFleet.mapper.setTankerMoveTowardsEntity(moves.peekFirst(), tc.getTankerID(), tc.getTankerCoordinate().distanceToCoordinate(moves.peekFirst().getCoord()));
         }
 
-        if (allowAddMove(moves, EntityChecker.DUMMY)) { // Unrestricted exploration to the same direction
-            if(timestep <= 300) {
+        if (allowAddMove(moves, EntityChecker.DUMMY)) {
+            if(timestep <= 300) { // Unrestricted exploration to the same direction if possible
+                if(lastVisitedFuelpumpHashcode == tc.getClosestObservableFuelpump().getEntityHash()) {
+                    getAndUpdateDirection();
+                }
+                else {
+                    lastVisitedFuelpumpHashcode = tc.getClosestObservableFuelpump().getEntityHash();
+                }
                 moves.add(new EntityNode(direction));
             }
             else {
-                moves.add(getAndUpdateDirection(DemoFleet.explorationDirection));
+                int prevDir = direction;
+                CoreEntity nextDir = getAndUpdateDirection(DemoFleet.explorationDirection);
+                if(prevDir == nextDir.getBearing() && lastVisitedFuelpumpHashcode == tc.getClosestObservableFuelpump().getEntityHash()) {
+                    getAndUpdateDirection();
+                    nextDir = new EntityNode(direction);
+                }
+                else {
+                    lastVisitedFuelpumpHashcode = tc.getClosestObservableFuelpump().getEntityHash();
+                }
+                moves.add(nextDir);
             }
         } else if (allowAddMove(moves, EntityChecker.STATION)) {
             getPassbyTask(moves, tc, entities.get(EntityChecker.TASKEDSTATION));
@@ -67,7 +84,7 @@ public class Explorer extends Planner {
         return moves;
     }
 
-    public int getAndUpdateDirection() {
+    private int getAndUpdateDirection() {
         int dir = direction;
         direction = crossDirectionMovement.get(direction);
         return dir;
@@ -112,7 +129,7 @@ public class Explorer extends Planner {
         this.startExplorerTimestep = startExplorerTimestep;
     }
 
-    public void getPassbyTask(Deque<CoreEntity> moves, TankerCoordinator tc, List<CoreEntity> taskedStation) {
+    private void getPassbyTask(Deque<CoreEntity> moves, TankerCoordinator tc, List<CoreEntity> taskedStation) {
         if(!taskedStation.isEmpty()) {
             CoreEntity ts = taskedStation.get(taskedStation.size() - 1);
             // IF there is a station in sight AND moveset is explorer AND has sufficient waste containment space AND has sufficient fuel
@@ -121,7 +138,6 @@ public class Explorer extends Planner {
                     !DemoFleet.mapper.getEntity(ts).getHasTankerMoveTowards() &&
                     super.acceptableFuelLevel(tc.getFuelLevel(), distAtoCviaB(tc.getEntityUnderTanker(), ts, tc.getClosestObservableFuelpump()))) {
                 moves.addFirst(ts);
-                DemoFleet.mapper.setTankerMoveTowardsEntity(ts, tc.getTankerID(), tc.getTankerCoordinate().distanceToCoordinate(ts.getCoord()));
             }
         }
     }
@@ -144,5 +160,4 @@ public class Explorer extends Planner {
     public void setEndExplorerTimeStep(long endExplorerTimeStep) {
         this.endExplorerTimeStep = endExplorerTimeStep;
     }
-
 }
