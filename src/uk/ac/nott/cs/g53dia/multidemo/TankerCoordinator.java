@@ -151,7 +151,7 @@ public class TankerCoordinator {
                 throw new IllegalArgumentException("Invalid direction " + "<" + moveAction + ", " + Calculation.directionToString(moveAction) + ">");
         }
 
-        tankerCoordinate.coordinateShiftBy(new Coordinates(x, y), '+');
+        tankerCoordinate = Coordinates.coordinateShiftBy(tankerCoordinate, new Coordinates(x, y), '+');
     }
 
     public CoreEntity getEntityUnderTanker() {
@@ -282,18 +282,13 @@ public class TankerCoordinator {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Tanker ID: ");
-        sb.append(tankerID);
-        sb.append("\n");
-        sb.append("Tanker Coordinate: ");
-        sb.append(tankerCoordinate.toString());
-        sb.append("\n");
-        sb.append("Entity Under Tanker: ");
-        sb.append(EntityChecker.entityToString(entityUnderTanker.getEntity(), Integer.MIN_VALUE));
-        sb.append("\n");
-        sb.append("Waste Collected: ");
-        sb.append(totalWasteCollected);
-        sb.append("\n");
+        sb.append("Tanker ID: ").append(tankerID).append("\n");
+        sb.append("Tanker Coordinate: ").append(tankerCoordinate.toString()).append("\n");
+        sb.append("Entity Under Tanker: ").append(EntityChecker.entityToString(entityUnderTanker.getEntity(), Integer.MIN_VALUE)).append("\n");
+        sb.append("Fuel Level: ").append(fuelLevel).append("\n");
+        sb.append("Waste Level: ").append(wasteLevel).append("\n");
+        sb.append("Waste Collected: ").append(totalWasteCollected).append("\n");
+        sb.append("Current Action: ").append(currentAction).append("\n");
 
         return sb.toString();
     }

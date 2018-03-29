@@ -156,16 +156,23 @@ public abstract class CoreEntity {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Type: ").append(EntityChecker.entityToString(this.getEntity(), EntityChecker.DUMMY)).append("\n");
-        sb.append("Hash: ").append(this.entityHash).append("\n");
-        sb.append("Coordinate: ").append(this.coord.toString()).append("\n");
-        sb.append("Bearing: ").append(Calculation.directionToString(this.bearing)).append("\n");
-        sb.append("First Seen: ").append(this.firstSeen).append("\n");
-        sb.append("Last Seen: ").append(this.lastSeen).append("\n");
-        sb.append("First Visited: ").append(this.firstVisited).append("\n");
-        sb.append("Last Visited: ").append(this.lastVisited).append("\n");
-        if (this.hasTask) {
-            sb.append("Waste Amount: ").append(this.wasteRemaining).append("\n");
+        if(isDirectionalEntity()) {
+            return "Directional Entity: " + this.bearing;
+        }
+        else {
+            sb.append("Type: ").append(EntityChecker.entityToString(this.getEntity(), EntityChecker.DUMMY)).append("\n");
+            sb.append("Hash: ").append(this.entityHash).append("\n");
+            sb.append("Coordinate: ").append(this.coord.toString()).append("\n");
+            if(bearing != Integer.MIN_VALUE) {
+                sb.append("Bearing: ").append(Calculation.directionToString(this.bearing)).append("\n");
+            }
+            sb.append("First Seen: ").append(this.firstSeen).append("\n");
+            sb.append("Last Seen: ").append(this.lastSeen).append("\n");
+            sb.append("First Visited: ").append(this.firstVisited).append("\n");
+            sb.append("Last Visited: ").append(this.lastVisited).append("\n");
+            if (this.hasTask) {
+                sb.append("Waste Amount: ").append(this.wasteRemaining).append("\n");
+            }
         }
 
         return sb.toString();

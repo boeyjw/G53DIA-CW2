@@ -46,6 +46,7 @@ public class Coordinates extends TwoNumberTuple {
                 Math.abs(target.getValue(1) - this.getValue(1)));
     }
 
+    @Deprecated
     public Coordinates coordinateShiftBy(NumberTuple otherNumberTuple, char operation) {
         switch (operation) {
             case PLUS:
@@ -61,6 +62,26 @@ public class Coordinates extends TwoNumberTuple {
         }
 
         return this;
+    }
+
+    public static Coordinates coordinateShiftBy(NumberTuple source, NumberTuple target, char operation) {
+        int x = source.getValue(0);
+        int y = source.getValue(1);
+
+        switch (operation) {
+            case PLUS:
+                x += target.getValue(0);
+                y += target.getValue(1);
+                break;
+            case MINUS:
+                x -= target.getValue(0);
+                y -= target.getValue(1);
+                break;
+            default:
+                throw new IllegalArgumentException("Operation out of scope");
+        }
+
+        return new Coordinates(x, y);
     }
 
     public int getClosestEntityDistance(List<CoreEntity> targets) {

@@ -28,7 +28,7 @@ public class DemoSimulator {
      * Time for which execution pauses so that GUI can update.
      * Reducing this value causes the simulation to run faster.
      */
-    private static int DELAY = 0;
+    private static int DELAY = 30;
 
     /**
      * Number of timesteps to execute
@@ -42,14 +42,14 @@ public class DemoSimulator {
         Fleet fleet = new DemoFleet();
         int score = 0; // TODO:
         // Create a GUI window to show the fleet
-//        TankerViewer tv = new TankerViewer(fleet);
-//        tv.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
+        TankerViewer tv = new TankerViewer(fleet);
+        tv.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
         // Start executing the tankers in the Fleet
         while (env.getTimestep() < DURATION) {
             // Advance the environment timestep
             env.tick();
             // Update the GUI
-//            tv.tick(env);
+            tv.tick(env);
 
             for (Tanker t:fleet) {
                 // Get the current view of the tanker
@@ -61,7 +61,7 @@ public class DemoSimulator {
                     a.execute(env, t);
                 } catch (OutOfFuelException ofe) {
                     System.err.println(ofe.getMessage());
-//                    System.exit(-1);
+                    System.exit(-1);
                 } catch (ActionFailedException afe) {
                     System.err.println(afe.getMessage() + " " + env.getTimestep());
                 }

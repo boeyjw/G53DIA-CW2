@@ -8,7 +8,7 @@ public class DemoFleet extends Fleet {
     /** 
      * Number of tankers in the fleet
      */
-    private static int FLEET_SIZE = 1;
+    private static int FLEET_SIZE = 4;
 
     public static MapBuilder mapper;
     public static ClusterMapBuilder clustermap;

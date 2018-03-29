@@ -17,7 +17,7 @@ public class Multiplanner extends Planner {
         int i = 0;
 
         for(ClusterEntity ce : cm) {
-            if(isAvailableCluster(ce, DemoFleet.allTankers, tc.getTankerID())) {
+            if(isAvailableCluster(ce, DemoFleet.allTankers, tc.getTankerID()) && ce.enabledCluster(timestep)) {
                 availableCluster[i] = true;
             }
             i++;

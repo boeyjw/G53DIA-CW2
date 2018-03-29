@@ -43,41 +43,28 @@ public class Explorer extends Planner {
     @Override
     public Deque<CoreEntity> plan(MapBuilder map, ClusterMapBuilder clustermap, Hashtable<Integer, List<CoreEntity>> entities,
                                   Deque<CoreEntity> moves, TankerCoordinator tc, long timestep) {
-        if(lastVisitedFuelpumpHashcode == Integer.MIN_VALUE) {
-            lastVisitedFuelpumpHashcode = tc.getClosestObservableFuelpump().getEntityHash();
+        if (EntityChecker.isFuelPump(tc.getEntityUnderTanker().getEntity()) && lastVisitedFuelpumpHashcode != tc.getEntityUnderTanker().getEntityHash()) {
+            lastVisitedFuelpumpHashcode = tc.getEntityUnderTanker().getEntityHash();
         }
-        if (allowAddMove(moves, EntityChecker.FUELPUMP) &&
-                !super.acceptableFuelLevel(tc.getFuelLevel(), tc.getTankerCoordinate(), tc.getClosestObservableFuelpump().getCoord())) {
-            moves.addFirst(tc.getClosestObservableFuelpump());
-        } else if (allowAddMove(moves, EntityChecker.WELL) && !super.acceptableWasteLevel(tc.getWasteLevel()) && tc.getClosestObservableWell() != null &&
-                super.acceptableFuelLevel(tc.getFuelLevel(),
-                        distAtoCviaB(tc.getEntityUnderTanker(), tc.getClosestObservableWell(), tc.getClosestObservableFuelpump()))) {
-            moves.addFirst(tc.getClosestObservableWell());
+        if (moves.peekLast().isDirectionalEntity()) {
+            moves.removeLast();
         }
 
-        if (allowAddMove(moves, EntityChecker.DUMMY)) {
-            if(timestep <= 300) { // Unrestricted exploration to the same direction if possible
-                if(lastVisitedFuelpumpHashcode == tc.getClosestObservableFuelpump().getEntityHash()) {
-                    getAndUpdateDirection();
-                }
-                else {
-                    lastVisitedFuelpumpHashcode = tc.getClosestObservableFuelpump().getEntityHash();
-                }
-                moves.add(new EntityNode(direction));
+        if (timestep <= 300) { // Unrestricted exploration to the same direction if possible
+            if (EntityChecker.isFuelPump(tc.getEntityUnderTanker().getEntity()) && lastVisitedFuelpumpHashcode == tc.getEntityUnderTanker().getEntityHash()) {
+                getAndUpdateDirection(DemoFleet.explorationDirection);
             }
-            else {
-                int prevDir = direction;
-                CoreEntity nextDir = getAndUpdateDirection(DemoFleet.explorationDirection);
-                if(prevDir == nextDir.getBearing() && lastVisitedFuelpumpHashcode == tc.getClosestObservableFuelpump().getEntityHash()) {
-                    getAndUpdateDirection();
-                    nextDir = new EntityNode(direction);
-                }
-                else {
-                    lastVisitedFuelpumpHashcode = tc.getClosestObservableFuelpump().getEntityHash();
-                }
-                moves.add(nextDir);
+            moves.add(new EntityNode(direction));
+        } else {
+            int prevDir = direction;
+            CoreEntity nextDir = getAndUpdateDirection(DemoFleet.explorationDirection);
+            if (prevDir == nextDir.getBearing() && lastVisitedFuelpumpHashcode == tc.getEntityUnderTanker().getEntityHash()) {
+                getAndUpdateDirection();
+                nextDir = new EntityNode(direction);
             }
-        } else if (allowAddMove(moves, EntityChecker.STATION)) {
+            moves.add(nextDir);
+        }
+        if (allowAddMove(moves, EntityChecker.STATION, false)) {
             getPassbyTask(moves, tc, entities.get(EntityChecker.TASKEDSTATION));
         }
 
@@ -130,7 +117,7 @@ public class Explorer extends Planner {
     }
 
     private void getPassbyTask(Deque<CoreEntity> moves, TankerCoordinator tc, List<CoreEntity> taskedStation) {
-        if(!taskedStation.isEmpty()) {
+        if (!taskedStation.isEmpty()) {
             CoreEntity ts = taskedStation.get(taskedStation.size() - 1);
             // IF there is a station in sight AND moveset is explorer AND has sufficient waste containment space AND has sufficient fuel
             // to go to the tasked station and to the closest fuel pump AND no other tanker going to the station
@@ -143,10 +130,10 @@ public class Explorer extends Planner {
     }
 
     private boolean passByTaskCheck(Deque<CoreEntity> moves) {
-        if(moves.isEmpty()) {
-            return true;
+        if (moves.isEmpty()) {
+            return false;
         }
-        if(moves.peekFirst().isDirectionalEntity()) {
+        if (moves.peekFirst().isDirectionalEntity()) {
             return true;
         }
 

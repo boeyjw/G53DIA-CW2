@@ -98,6 +98,14 @@ public class ClusterMapBuilder extends MapBuilder {
         }
     }
 
+    public void setLastVisitedCluster(CoreEntity fuelpump, long currentTimestep) {
+        for(ClusterEntity ce : clusterMap) {
+            if(ce.getEntityHash() == fuelpump.getEntityHash()) {
+                ce.setLastVisitedCluster(currentTimestep);
+            }
+        }
+    }
+
     @Override
     public String toString() {
         return "Clustermap size: " + clusterMap.size();

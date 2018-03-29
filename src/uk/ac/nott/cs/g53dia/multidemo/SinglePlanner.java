@@ -24,15 +24,15 @@ public class SinglePlanner extends Planner {
             }
         }
 
-        CoreEntity source = tc.getEntityUnderTanker();
+        EntityNode source = (EntityNode) tc.getEntityUnderTanker();
         int nextMove = EntityChecker.DUMMY;
         int estFuelLevel = tc.getFuelLevel();
         int estWasteLevel = tc.getWasteLevel();
         while (nextMove != Integer.MAX_VALUE) {
-            if (allowAddMove(moves, EntityChecker.FUELPUMP) &&
+            if (allowAddMove(moves, EntityChecker.FUELPUMP, true) &&
                     !super.acceptableFuelLevel(estFuelLevel, getClosestEntityDistanceTo(extendedEntities.get(EntityChecker.FUELPUMP), source))) {
                 nextMove = EntityChecker.FUELPUMP;
-            } else if (allowAddMove(moves, EntityChecker.WELL) && !super.acceptableWasteLevel(estWasteLevel)) {
+            } else if (allowAddMove(moves, EntityChecker.WELL, true) && !super.acceptableWasteLevel(estWasteLevel)) {
                 nextMove = EntityChecker.WELL;
             } else if (!extendedEntities.get(EntityChecker.TASKEDSTATION).isEmpty()) {
                 nextMove = EntityChecker.TASKEDSTATION;
@@ -41,19 +41,22 @@ public class SinglePlanner extends Planner {
             }
 
             if (nextMove != Integer.MAX_VALUE) {
-                List<EntityNode> fscorednodes = filterFeasibleNodes(calculateFScore(source, extendedEntities.get(nextMove), ASTAR_ALGORITHM, estWasteLevel), estFuelLevel);
+                List<EntityNode> fscorednodes = filterFeasibleNodes(calculateFScore(source, extendedEntities.get(nextMove), DJIKSTRA_ALGORITHM, estWasteLevel), estFuelLevel);
                 if (fscorednodes.isEmpty()) {
                     break;
                 } else {
-                    CoreEntity nextEntity = Collections.min(fscorednodes, fscorecompare);
+                    fscorednodes.removeIf(entityNode -> entityNode.getHasTankerMoveTowards());
+                    EntityNode nextEntity = Collections.min(fscorednodes, fscorecompare);
                     switch (nextMove) {
                         case EntityChecker.FUELPUMP:
                             estFuelLevel = 100;
                             break;
                         case EntityChecker.WELL:
+                            estFuelLevel -= nextEntity.getFuelConsumption();
                             estWasteLevel = 0;
                             break;
                         case EntityChecker.TASKEDSTATION:
+                            estFuelLevel -= nextEntity.getFuelConsumption();
                             int collectedWaste = estWasteLevel + nextEntity.getWasteRemaining() - Tanker.MAX_WASTE;
                             if (collectedWaste <= 0) {
                                 estWasteLevel += nextEntity.getWasteRemaining();
@@ -67,11 +70,13 @@ public class SinglePlanner extends Planner {
                             nextMove = Integer.MAX_VALUE;
                             break;
                     }
-                    moves.add(nextEntity);
+                    nextEntity.setParent(source);
                     source = nextEntity;
+                    moves.add(nextEntity);
                 }
             }
         }
+
         return moves;
     }
 

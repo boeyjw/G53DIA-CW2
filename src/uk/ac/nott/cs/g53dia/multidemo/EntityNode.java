@@ -58,7 +58,7 @@ public class EntityNode extends CoreEntity {
     }
 
     public void calculateFscore() {
-        this.fscore = (int) Math.abs(gscore + (hscore * weight));
+        this.fscore = (int) Math.abs((gscore * weight) + hscore);
     }
 
     public double getWeight() {

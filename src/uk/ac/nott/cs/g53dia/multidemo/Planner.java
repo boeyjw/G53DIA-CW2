@@ -82,21 +82,35 @@ public abstract class Planner {
         return a.getCoord().distanceToCoordinate(b.getCoord()) + b.getCoord().distanceToCoordinate(c.getCoord());
     }
 
-    protected boolean allowAddMove(Deque<CoreEntity> moves, int entityType) {
+    protected boolean allowAddMove(Deque<CoreEntity> moves, int entityType, boolean isAppend) {
         if (moves.isEmpty()) {
             return true;
         }
-        if (moves.peekFirst().isDirectionalEntity() || moves.peekLast().isDirectionalEntity()) {
-            if(EntityChecker.DUMMY == entityType) {
+        if (EntityChecker.DUMMY == entityType) {
+            if(moves.peekFirst().isDirectionalEntity() || moves.peekLast().isDirectionalEntity()) {
                 return false;
             }
             return true;
         }
         else {
-            if(EntityChecker.getEntityType(moves.peekLast().getEntity(), true) == entityType) {
-                return false;
+            if(isAppend) {
+                if(moves.peekLast().isDirectionalEntity()) {
+                    return false;
+                }
+                if(EntityChecker.getEntityType(moves.peekLast().getEntity(), true) == entityType) {
+                    return false;
+                }
+                return true;
             }
-            return true;
+            else {
+                if(moves.peekFirst().isDirectionalEntity()) {
+                    return true;
+                }
+                if(EntityChecker.getEntityType(moves.peekFirst().getEntity(), true) == entityType) {
+                    return false;
+                }
+                return true;
+            }
         }
     }
 
@@ -124,14 +138,15 @@ public abstract class Planner {
                         t.setHscore(t.getWasteRemaining());
                         int offset = tankerWasteLevel + t.getWasteRemaining() - Tanker.MAX_WASTE;
                         if(offset <= 0) {
-                            t.setWeight(1 + (offset * 0.001));
+                            t.setWeight(1 + (Math.abs(offset) * 0.001));
                         }
                         else {
-                            double weight = 1 - (offset * 0.001);
-                            if(weight < (double) 0) {
-                                weight = 0;
-                            }
-                            t.setWeight(weight);
+//                            double weight = 1 - (offset * 0.001);
+//                            if(weight < (double) 0) {
+//                                weight = 0;
+//                            }
+//                            t.setWeight(weight);
+                            t.setWeight(0);
                         }
                     }
                     else {
@@ -163,7 +178,6 @@ public abstract class Planner {
         src.setHscore(0);
         src.setWeight(1);
         src.calculateFscore();
-        path.add(src);
 
         while(src.getEntityHash() != dest.getEntityHash()) {
             List<EntityNode> fscoredNodes = new ArrayList<>();
@@ -177,7 +191,7 @@ public abstract class Planner {
                         t.setHscore(0);
                         break;
                     case ASTAR_ALGORITHM:
-                        t.setHscore(source.getCoord().distanceToCoordinate(destination.getCoord()));
+                        t.setHscore(src.getCoord().distanceToCoordinate(destination.getCoord()));
                         break;
                     default:
                         throw new IllegalArgumentException("(Planner) Invalid algorithm selected!");
@@ -194,7 +208,7 @@ public abstract class Planner {
             else {
                 EntityNode minNode = Collections.min(fscoredNodes, fscorecompare);
                 path.add(minNode);
-                source = minNode;
+                src = minNode;
                 nominee.remove(minNode);
 
                 estFuelLevel -= minNode.getFuelConsumption();
