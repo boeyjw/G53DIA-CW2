@@ -56,8 +56,8 @@ public class DemoTanker extends Tanker {
         plancontroller = new PlanController();
         singleplanner = new SinglePlanner();
 
-        moves.addFirst(explorer.getAndUpdateDirection(DemoFleet.explorationDirection));
-        DemoFleet.explorationDirection.add(moves.peekFirst().getBearing());
+        moves.addFirst(explorer.startUpDirection());
+        DemoFleet.explorationDirection.put(tc.getTankerID(), moves.peekFirst().getBearing());
     }
 
     public Action senseAndAct(Cell[][] view, long timestep) {
@@ -69,6 +69,16 @@ public class DemoTanker extends Tanker {
         tc.setTankerStatus(this, new EntityNode(getCurrentCell(view), tc.getTankerCoordinate(), timestep),
                 moves.isEmpty() ? TankerCoordinator.NOACTION : tc.setCurrentAction(moves.peekFirst()), timestep);
         DemoFleet.history.get(tc.getTankerID()).add(getCurrentCell(view).getPoint().toString());
+        if (moves.peekFirst().isDirectionalEntity()) {
+            DemoFleet.explorationDirection.put(tc.getTankerID(), moves.peekFirst().getBearing());
+        }
+        else if (Calculation.targetBearing(tc.getTankerCoordinate(), moves.peekFirst().getCoord()) != Calculation.ONTANKER) {
+            DemoFleet.explorationDirection.put(tc.getTankerID(), Calculation.targetBearing(tc.getTankerCoordinate(), moves.peekFirst().getCoord()));
+            if(EntityChecker.isFuelPump(moves.peekFirst().getEntity())) {
+                tc.setMovingTowardsCluster();
+                DemoFleet.clustermap.setLastVisitedCluster(moves.peekFirst(), timestep);
+            }
+        }
 
         // Scan stage
         spiralScanView(view, timestep);
@@ -112,12 +122,14 @@ public class DemoTanker extends Tanker {
         }
         plancontroller.managedPlan();
         if(moves.isEmpty()) {
-            moves.addLast(explorer.getAndUpdateDirection(DemoFleet.explorationDirection));
+            moves.addLast(explorer.decideDirection(DemoFleet.mapper.getEntityMap(EntityChecker.FUELPUMP), tc));
         }
         if(!moves.peekLast().isDirectionalEntity()) {
-            moves.addLast(explorer.getAndUpdateDirection(DemoFleet.explorationDirection));
+            moves.addLast(explorer.decideDirection(DemoFleet.mapper.getEntityMap(EntityChecker.FUELPUMP), tc));
         }
 
+        l.d("Fuel: " + getFuelLevel());
+        l.d("Waste Level: " + getWasteLevel());
         l.d("Tanker Coordinate: " + tc.getTankerCoordinate());
         l.d("True Coordinate: " + getPosition());
         l.dc("[");
@@ -253,13 +265,14 @@ public class DemoTanker extends Tanker {
 
         Cell c = moves.peekFirst().getEntity();
 
-        if (EntityChecker.getEntityType(c, true) == EntityChecker.getEntityType(getCurrentCell(view), true)) {
+        if (EntityChecker.getEntityType(c, true) == EntityChecker.getEntityType(getCurrentCell(view), true) &&
+                c.getPoint().hashCode() == getCurrentCell(view).getPoint().hashCode()) {
             CoreEntity ts = moves.removeFirst();
-            if (EntityChecker.isFuelPump(c) && getFuelLevel() != MAX_FUEL) {
+            if (EntityChecker.isFuelPump(c) && getFuelLevel() < MAX_FUEL) {
                 history.add(ts);
                 l.d("MOVES: REFUEL" + " => " + c.getClass() + " @ " + c.getPoint());
                 return new RefuelAction();
-            } else if (EntityChecker.isWell(c) && getWasteLevel() >= 0) {
+            } else if (EntityChecker.isWell(c) && getWasteLevel() > 0) {
                 history.add(ts);
                 l.d("MOVES: DUMP" + " => " + c.getClass() + " @ " + c.getPoint());
                 return new DisposeWasteAction();
@@ -288,10 +301,6 @@ public class DemoTanker extends Tanker {
             tc.moveTowardsActionTankerDisplace(moves.peekFirst());
             return new MoveTowardsAction(moves.peekFirst().getEntity().getPoint());
         }
-    }
-
-    public TankerCoordinator getTC() {
-        return tc;
     }
 
     private void cleanup() {

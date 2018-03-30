@@ -1,7 +1,6 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
 import uk.ac.nott.cs.g53dia.multilibrary.Cell;
-import uk.ac.nott.cs.g53dia.multilibrary.Point;
 
 /**
  * Stores the entity in a node used for planning

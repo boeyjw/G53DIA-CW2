@@ -72,6 +72,9 @@ public class SinglePlanner extends Planner {
                     }
                     nextEntity.setParent(source);
                     source = nextEntity;
+                    if(!moves.isEmpty() && moves.peekLast().isDirectionalEntity()) {
+                        moves.removeLast();
+                    }
                     moves.add(nextEntity);
                 }
             }

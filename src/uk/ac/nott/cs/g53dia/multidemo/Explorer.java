@@ -2,27 +2,23 @@ package uk.ac.nott.cs.g53dia.multidemo;
 
 import uk.ac.nott.cs.g53dia.multilibrary.MoveAction;
 
-import java.net.Inet4Address;
 import java.util.*;
 
 /**
  * Handles exploration of the tanker
  */
 public class Explorer extends Planner {
-    public static boolean explorerMode = false;
+    public static int CHARTING_RADIUS = 50;
+
     private HashMap<Integer, Integer> crossDirectionMovement;
-    private int direction;
-    private long startExplorerTimestep;
-    private long endExplorerTimeStep;
-    private int lastVisitedFuelpumpHashcode;
+    private Integer randomDirection;
+    private Integer[] directions;
 
     public Explorer() {
         crossDirectionMovement = new HashMap<>();
+        directions = new Integer[Threshold.TOTAL_DIRECTION_BOUND.getThreshold()];
+        randomDirection = new Random().nextInt(Threshold.TOTAL_DIRECTION_BOUND.getThreshold());
         init();
-        direction = MoveAction.NORTHEAST;
-        startExplorerTimestep = 0;
-        endExplorerTimeStep = 0;
-        lastVisitedFuelpumpHashcode = Integer.MIN_VALUE;
     }
 
     /**
@@ -38,85 +34,91 @@ public class Explorer extends Planner {
         crossDirectionMovement.put(MoveAction.NORTHWEST, MoveAction.SOUTHEAST);
         crossDirectionMovement.put(MoveAction.SOUTHEAST, MoveAction.SOUTHWEST);
         crossDirectionMovement.put(MoveAction.SOUTHWEST, MoveAction.NORTH);
+
+        for(Integer dir : crossDirectionMovement.keySet()) {
+            directions[dir] = dir;
+        }
+    }
+
+    public CoreEntity startUpDirection() {
+        int startDir = MoveAction.NORTHEAST;
+        while(DemoFleet.explorationDirection.containsValue(startDir)) {
+            startDir = crossDirectionMovement.get(startDir);
+        }
+
+        return new EntityNode(startDir);
     }
 
     @Override
     public Deque<CoreEntity> plan(MapBuilder map, ClusterMapBuilder clustermap, Hashtable<Integer, List<CoreEntity>> entities,
                                   Deque<CoreEntity> moves, TankerCoordinator tc, long timestep) {
-        if (EntityChecker.isFuelPump(tc.getEntityUnderTanker().getEntity()) && lastVisitedFuelpumpHashcode != tc.getEntityUnderTanker().getEntityHash()) {
-            lastVisitedFuelpumpHashcode = tc.getEntityUnderTanker().getEntityHash();
-        }
-        if (moves.peekLast().isDirectionalEntity()) {
-            moves.removeLast();
-        }
-
-        if (timestep <= 300) { // Unrestricted exploration to the same direction if possible
-            if (EntityChecker.isFuelPump(tc.getEntityUnderTanker().getEntity()) && lastVisitedFuelpumpHashcode == tc.getEntityUnderTanker().getEntityHash()) {
-                getAndUpdateDirection(DemoFleet.explorationDirection);
-            }
-            moves.add(new EntityNode(direction));
-        } else {
-            int prevDir = direction;
-            CoreEntity nextDir = getAndUpdateDirection(DemoFleet.explorationDirection);
-            if (prevDir == nextDir.getBearing() && lastVisitedFuelpumpHashcode == tc.getEntityUnderTanker().getEntityHash()) {
-                getAndUpdateDirection();
-                nextDir = new EntityNode(direction);
-            }
-            moves.add(nextDir);
-        }
-        if (allowAddMove(moves, EntityChecker.STATION, false)) {
+        if(moves.isEmpty()) {
             getPassbyTask(moves, tc, entities.get(EntityChecker.TASKEDSTATION));
+            moves.addLast(decideDirection(map.getEntityMap(EntityChecker.FUELPUMP), tc));
+        }
+        else if(moves.size() == 1) {
+            if(moves.peekFirst().isDirectionalEntity()) {
+                getPassbyTask(moves, tc, entities.get(EntityChecker.TASKEDSTATION));
+            }
+            else {
+                moves.addLast(decideDirection(map.getEntityMap(EntityChecker.FUELPUMP), tc));
+            }
+        }
+        else {
+            if(moves.peekLast().isDirectionalEntity()) {
+                moves.removeLast();
+                moves.addLast(decideDirection(map.getEntityMap(EntityChecker.FUELPUMP), tc));
+            }
         }
 
         return moves;
     }
 
-    private int getAndUpdateDirection() {
-        int dir = direction;
-        direction = crossDirectionMovement.get(direction);
-        return dir;
-    }
+    public CoreEntity decideDirection(List<CoreEntity> fuelpumps, TankerCoordinator tc) {
+        Set<Integer> tabuMoves = new HashSet<>(DemoFleet.explorationDirection.values()); // Disallow any tankers travelling the same direction
+        if(!EntityChecker.isFuelPump(tc.getEntityUnderTanker().getEntity())) {
+            return new EntityNode(DemoFleet.explorationDirection.get(tc.getTankerID()));
+        }
+        if(tabuMoves.size() >= Threshold.TOTAL_DIRECTION_BOUND.getThreshold()) {
+            return new EntityNode(randomDirection);
+        }
 
-    public CoreEntity getAndUpdateDirection(List<Integer> tankersExploringDirection) {
-        if (!tankersExploringDirection.isEmpty()) {
-            int numDir = 0;
-            while (tankersExploringDirection.contains(direction) && numDir++ < Threshold.TOTAL_DIRECTION_BOUND.getThreshold()) {
-                getAndUpdateDirection();
+        // Random direction only at no tanker bearing
+        while(tabuMoves.contains(randomDirection)) {
+            randomDirection = crossDirectionMovement.get(randomDirection);
+        }
+
+        // Global fuel pump bearing check
+        int[] fpcounter = new int[Threshold.TOTAL_DIRECTION_BOUND.getThreshold()];
+        Arrays.fill(fpcounter, 0);
+        for(CoreEntity fp : fuelpumps) {
+            int bearing = Calculation.targetBearing(tc.getTankerCoordinate(), fp.getCoord());
+            if(bearing != Calculation.ONTANKER) {
+                tabuMoves.add(bearing);
+                fpcounter[bearing]++;
             }
         }
 
-        return new EntityNode(direction);
-    }
-
-    @Deprecated
-    public int getDirectionUsingClusterAttraction(Hashtable<String, List<CoreEntity>> entities) {
-        Integer[] directionCounter = new Integer[Threshold.TOTAL_DIRECTION_BOUND.getThreshold()];
-        Arrays.fill(directionCounter, 0);
-        for (CoreEntity e : entities.get("station")) {
-            if (e.getBearing() != Integer.MIN_VALUE) {
-                directionCounter[e.getBearing()]++;
+        int dir = MoveAction.NORTHWEST;
+        if(tabuMoves.size() >= Threshold.TOTAL_DIRECTION_BOUND.getThreshold()) {
+            int min = Integer.MAX_VALUE;
+            for(int i = 0; i < fpcounter.length; i++) {
+                if(fpcounter[i] < min) {
+                    min = fpcounter[i];
+                    dir = i;
+                }
             }
         }
-        for (CoreEntity e : entities.get("taskedStation")) {
-            if (e.getBearing() != Integer.MIN_VALUE) {
-                directionCounter[e.getBearing()] += 2;
+        else {
+            while(tabuMoves.contains(dir)) {
+                dir = crossDirectionMovement.get(dir);
             }
         }
-        int dir = Calculation.argmax_int(directionCounter);
-        direction = dir == direction ? getAndUpdateDirection() : dir;
 
-        return direction;
+        return new EntityNode(dir == DemoFleet.explorationDirection.get(tc.getTankerID()) ? crossDirectionMovement.get(dir) : dir);
     }
 
-    public long getStartExplorerTimestep() {
-        return startExplorerTimestep;
-    }
-
-    public void setStartExplorerTimestep(long startExplorerTimestep) {
-        this.startExplorerTimestep = startExplorerTimestep;
-    }
-
-    private void getPassbyTask(Deque<CoreEntity> moves, TankerCoordinator tc, List<CoreEntity> taskedStation) {
+    public void getPassbyTask(Deque<CoreEntity> moves, TankerCoordinator tc, List<CoreEntity> taskedStation) {
         if (!taskedStation.isEmpty()) {
             CoreEntity ts = taskedStation.get(taskedStation.size() - 1);
             // IF there is a station in sight AND moveset is explorer AND has sufficient waste containment space AND has sufficient fuel
@@ -133,18 +135,10 @@ public class Explorer extends Planner {
         if (moves.isEmpty()) {
             return false;
         }
-        if (moves.peekFirst().isDirectionalEntity()) {
-            return true;
-        }
+//        if (moves.peekFirst().isDirectionalEntity()) {
+//            return true;
+//        }
 
         return false;
-    }
-
-    public long getEndExplorerTimeStep() {
-        return endExplorerTimeStep;
-    }
-
-    public void setEndExplorerTimeStep(long endExplorerTimeStep) {
-        this.endExplorerTimeStep = endExplorerTimeStep;
     }
 }

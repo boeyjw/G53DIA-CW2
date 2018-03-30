@@ -183,7 +183,7 @@ public abstract class Planner {
             List<EntityNode> fscoredNodes = new ArrayList<>();
             for (CoreEntity target : nominee) {
                 EntityNode t = (EntityNode) target;
-                int dist = source.getCoord().distanceToCoordinate(t.getCoord());
+                int dist = src.getCoord().distanceToCoordinate(t.getCoord());
                 t.setFuelConsumption(dist);
                 t.setGscore(src.getGscore() + dist);
                 switch (algorithm) {
@@ -191,7 +191,7 @@ public abstract class Planner {
                         t.setHscore(0);
                         break;
                     case ASTAR_ALGORITHM:
-                        t.setHscore(src.getCoord().distanceToCoordinate(destination.getCoord()));
+                        t.setHscore(t.getCoord().distanceToCoordinate(destination.getCoord()));
                         break;
                     default:
                         throw new IllegalArgumentException("(Planner) Invalid algorithm selected!");

@@ -1,7 +1,5 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
-import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
-
 import java.util.*;
 
 public class Multiplanner extends Planner {
@@ -39,6 +37,9 @@ public class Multiplanner extends Planner {
             CoreEntity desiredCluster = getClosestEntityTo(clusterNominee, tc.getEntityUnderTanker());
             int dist = tc.getTankerCoordinate().distanceToCoordinate(desiredCluster.getCoord());
             if(super.acceptableFuelLevel(tc.getFuelLevel(), dist)) {
+                if(!moves.isEmpty() && moves.peekLast().isDirectionalEntity()) {
+                    moves.removeLast();
+                }
                 moves.add(desiredCluster);
                 clustermap.setTankerMovingTowards(desiredCluster, tc.getTankerID(), dist);
                 tc.setMovingTowardsCluster();
@@ -52,6 +53,9 @@ public class Multiplanner extends Planner {
                 }
                 else {
                     tc.setMovingTowardsCluster();
+                    if(!moves.isEmpty() && moves.peekLast().isDirectionalEntity()) {
+                        moves.removeLast();
+                    }
                     moves.addAll(path);
                 }
             }

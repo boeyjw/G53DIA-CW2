@@ -1,5 +1,6 @@
 package uk.ac.nott.cs.g53dia.multidemo;
-import uk.ac.nott.cs.g53dia.multilibrary.*;
+
+import uk.ac.nott.cs.g53dia.multilibrary.Fleet;
 
 import java.util.*;
 
@@ -8,13 +9,13 @@ public class DemoFleet extends Fleet {
     /** 
      * Number of tankers in the fleet
      */
-    private static int FLEET_SIZE = 4;
+    private static int FLEET_SIZE = 2;
 
     public static MapBuilder mapper;
     public static ClusterMapBuilder clustermap;
     public static Hashtable<Integer, TankerCoordinator> allTankers;
     public static Hashtable<Integer, List<String>> history;
-    public static List<Integer> explorationDirection;
+    public static Hashtable<Integer, Integer> explorationDirection;
     public static Planner multiplanner;
 
     public DemoFleet() {
@@ -22,7 +23,7 @@ public class DemoFleet extends Fleet {
         clustermap = new ClusterMapBuilder();
         allTankers = new Hashtable<>();
         history = new Hashtable<>();
-        explorationDirection = new LinkedList<>();
+        explorationDirection = new Hashtable<>();
         multiplanner = new Multiplanner();
 
         // Create the tankers

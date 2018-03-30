@@ -6,7 +6,6 @@ import uk.ac.nott.cs.g53dia.multilibrary.Station;
 import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
 
 import java.util.Deque;
-import java.util.List;
 
 public class TankerCoordinator {
     public static int FATAL_ERROR = Integer.MIN_VALUE;
@@ -206,10 +205,10 @@ public class TankerCoordinator {
     public void setClosestFuelWell(CoreEntity fuelpump, CoreEntity well) {
         CoreEntity tmp;
         if(fuelpump == null) {
-            tmp = getClosest(EntityChecker.FUELPUMP);
-            if(tmp != null && tankerCoordinate.distanceToCoordinate(this.closestObservableFuelpump.getCoord()) > tankerCoordinate.distanceToCoordinate(tmp.getCoord())) {
-                this.closestObservableFuelpump = tmp;
-            }
+//            tmp = getClosest(EntityChecker.FUELPUMP);
+//            if(tmp != null && tankerCoordinate.distanceToCoordinate(this.closestObservableFuelpump.getCoord()) > tankerCoordinate.distanceToCoordinate(tmp.getCoord())) {
+//                this.closestObservableFuelpump = tmp;
+//            }
         }
         else {
             this.closestObservableFuelpump = fuelpump;

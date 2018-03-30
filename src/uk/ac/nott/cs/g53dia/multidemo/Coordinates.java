@@ -1,7 +1,5 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
-import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
-
 import java.util.List;
 
 /**

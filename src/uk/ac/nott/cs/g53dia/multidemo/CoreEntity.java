@@ -2,9 +2,7 @@ package uk.ac.nott.cs.g53dia.multidemo;
 
 import com.sun.istack.internal.NotNull;
 import com.sun.istack.internal.Nullable;
-import javafx.beans.binding.StringBinding;
 import uk.ac.nott.cs.g53dia.multilibrary.Cell;
-import uk.ac.nott.cs.g53dia.multilibrary.Point;
 import uk.ac.nott.cs.g53dia.multilibrary.Station;
 import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
 

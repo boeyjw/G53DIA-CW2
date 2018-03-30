@@ -1,6 +1,5 @@
 package uk.ac.nott.cs.g53dia.multidemo;
 
-import uk.ac.nott.cs.g53dia.multidemo.Coordinates;
 import uk.ac.nott.cs.g53dia.multilibrary.MoveAction;
 
 import java.util.Hashtable;

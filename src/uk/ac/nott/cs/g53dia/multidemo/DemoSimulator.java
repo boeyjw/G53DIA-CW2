@@ -1,9 +1,6 @@
 package uk.ac.nott.cs.g53dia.multidemo;
-import uk.ac.nott.cs.g53dia.multilibrary.*;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import uk.ac.nott.cs.g53dia.multilibrary.*;
 
 /**
  * An example of how to simulate execution of a tanker agent in the sample (task) environment.
@@ -28,7 +25,7 @@ public class DemoSimulator {
      * Time for which execution pauses so that GUI can update.
      * Reducing this value causes the simulation to run faster.
      */
-    private static int DELAY = 30;
+    private static int DELAY = 0;
 
     /**
      * Number of timesteps to execute
@@ -42,14 +39,14 @@ public class DemoSimulator {
         Fleet fleet = new DemoFleet();
         int score = 0; // TODO:
         // Create a GUI window to show the fleet
-        TankerViewer tv = new TankerViewer(fleet);
-        tv.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
+//        TankerViewer tv = new TankerViewer(fleet);
+//        tv.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
         // Start executing the tankers in the Fleet
         while (env.getTimestep() < DURATION) {
             // Advance the environment timestep
             env.tick();
             // Update the GUI
-            tv.tick(env);
+//            tv.tick(env);
 
             for (Tanker t:fleet) {
                 // Get the current view of the tanker

@@ -10,7 +10,7 @@ public enum Threshold {
     HIGHEST_WASTE((int) Math.floor(Tanker.MAX_WASTE * 0.95), true),
     TOTAL_VIEW_RANGE(Tanker.VIEW_RANGE * 2 + 1, false),
     TOTAL_DIRECTION_BOUND(8, true),
-    REFUEL_ERROR_MARGIN(3, true),
+    REFUEL_ERROR_MARGIN(4, true),
     MIN_WASTE_BEFORE_DISPOSE((int) Math.floor(Tanker.MAX_WASTE * 0.45), true);
 
     private final int thresh;
