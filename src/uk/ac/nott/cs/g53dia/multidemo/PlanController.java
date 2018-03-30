@@ -11,6 +11,13 @@ import java.util.List;
  * Agent control subsystem that monitors current plan/moveset and ensure agent necessities are satisfied.
  */
 public class PlanController extends Planner {
+    public static int FATAL_ERROR_AVOID = 0; // Bodged fix to prevent infinite loop @ line 201
+    /**
+     * Problem is that tanker attempts to travel to an unreachable entity and attempts to push an unreachable fuel pump
+     * to the tanker moveset. However, fixing insufficient fuel portion still creates an infinite loop. Something else
+     * in the condition is amiss.
+     */
+
     public static final int EXPLORE = 0;
     public static final int CLUSTER_PLANNING = 1;
     public static final int LOCAL_PLANNING = 2;
@@ -49,12 +56,12 @@ public class PlanController extends Planner {
             case HAS_FULL_FUEL:
             case HAS_NO_WASTE_IN_TANKER:
             case UNKNOWN_ENTITY_ERROR:
-            case UNREACHABLE_ENTITY:
+            case UNREACHABLE_ENTITY: // Problem here
                 displacedEntity = moves.removeFirst();
                 DemoFleet.mapper.unsetTankerMoveTowardsEntity(displacedEntity);
                 break;
 
-            case INSUFFICIENT_FUEL:
+            case INSUFFICIENT_FUEL: // Probably problem here
                 displacedEntity = tc.getClosestObservableFuelpump();
                 if(!super.acceptableFuelLevel(tc.getFuelLevel(), tc.getTankerCoordinate(), displacedEntity.getCoord())) {
                     displacedEntity = getClosestEntityTo(map.getEntityMap(EntityChecker.FUELPUMP), tc.getEntityUnderTanker());
@@ -99,6 +106,14 @@ public class PlanController extends Planner {
         return null;
     }
 
+    /**
+     * Verifies the integrity of tanker intention
+     * @param moves Tanker intentions
+     * @param entities Tanker observable entities
+     * @param tc Tanker status
+     * @param timestep Current timestep
+     * @return True if intentions are valid.
+     */
     public boolean allowMoveset(Deque<CoreEntity> moves, Hashtable<Integer, List<CoreEntity>> entities, TankerCoordinator tc, long timestep) {
         moveStatus = NO_ERROR;
         if (moves.isEmpty()) {
@@ -172,8 +187,21 @@ public class PlanController extends Planner {
         return true;
     }
 
+    /**
+     * Execute only if intentions are invalid.
+     * @param moves Tanker intentions
+     * @param clustermap {@link DemoFleet#clustermap}
+     * @param entities Agent observable entities
+     * @param tc Tanker status
+     * @param timestep Current timestep
+     * @return Integer representation on what plan to execute next
+     */
     public int decidePlan(Deque<CoreEntity> moves, ClusterMapBuilder clustermap, Hashtable<Integer, List<CoreEntity>> entities, TankerCoordinator tc, long timestep) {
         int currentPlan = Integer.MIN_VALUE;
+        if(FATAL_ERROR_AVOID++ >= 100) { // The bodged fix
+            moves.clear(); // Obliterate plan
+            return EXPLORE;
+        }
         switch (moveStatus) {
             case INSUFFICIENT_FUEL:
             case INSUFFICIENT_WASTE_CAPACITY:
@@ -227,10 +255,14 @@ public class PlanController extends Planner {
         return currentPlan;
     }
 
+    /**
+     * A plan has been made and reset all internal flags
+     */
     public void managedPlan() {
         previousPlan = Integer.MIN_VALUE;
         override = Integer.MIN_VALUE;
         moveStatus = NO_ERROR;
+        FATAL_ERROR_AVOID = 0;
     }
 
     @Override

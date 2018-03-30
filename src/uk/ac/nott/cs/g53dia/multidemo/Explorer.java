@@ -16,6 +16,7 @@ public class Explorer extends Planner {
 
     public Explorer() {
         crossDirectionMovement = new HashMap<>();
+        // Simply stores all available directions a tanker can traverse
         directions = new Integer[Threshold.TOTAL_DIRECTION_BOUND.getThreshold()];
         randomDirection = new Random().nextInt(Threshold.TOTAL_DIRECTION_BOUND.getThreshold());
         init();
@@ -40,6 +41,10 @@ public class Explorer extends Planner {
         }
     }
 
+    /**
+     * Execute this on simulation initialisation
+     * @return Tanker first direction to traverse without conflict with other tankers
+     */
     public CoreEntity startUpDirection() {
         int startDir = MoveAction.NORTHEAST;
         while(DemoFleet.explorationDirection.containsValue(startDir)) {
@@ -65,7 +70,7 @@ public class Explorer extends Planner {
             }
         }
         else {
-            if(moves.peekLast().isDirectionalEntity()) {
+            if(moves.peekLast().isDirectionalEntity()) { // Update the directional entity
                 moves.removeLast();
                 moves.addLast(decideDirection(map.getEntityMap(EntityChecker.FUELPUMP), tc));
             }
@@ -74,13 +79,19 @@ public class Explorer extends Planner {
         return moves;
     }
 
+    /**
+     * Deliberates on which direction to explore next
+     * @param fuelpumps {@link DemoFleet#mapper} fuel pumps
+     * @param tc Tanker status
+     * @return Directional entity
+     */
     public CoreEntity decideDirection(List<CoreEntity> fuelpumps, TankerCoordinator tc) {
         Set<Integer> tabuMoves = new HashSet<>(DemoFleet.explorationDirection.values()); // Disallow any tankers travelling the same direction
-        if(!EntityChecker.isFuelPump(tc.getEntityUnderTanker().getEntity())) {
+        if(!EntityChecker.isFuelPump(tc.getEntityUnderTanker().getEntity())) { // Deliberate only if tanker is on a fuel pump
             return new EntityNode(DemoFleet.explorationDirection.get(tc.getTankerID()));
         }
-        if(tabuMoves.size() >= Threshold.TOTAL_DIRECTION_BOUND.getThreshold()) {
-            return new EntityNode(randomDirection);
+        if(tabuMoves.size() >= Threshold.TOTAL_DIRECTION_BOUND.getThreshold()) { // Support up to 8 tankers only
+            return new EntityNode(crossDirectionMovement.get(randomDirection));
         }
 
         // Random direction only at no tanker bearing
@@ -110,7 +121,7 @@ public class Explorer extends Planner {
             }
         }
         else {
-            while(tabuMoves.contains(dir)) {
+            while(tabuMoves.contains(dir)) { // Keep ticking until no direction is traversed by any tanker
                 dir = crossDirectionMovement.get(dir);
             }
         }
@@ -118,6 +129,12 @@ public class Explorer extends Planner {
         return new EntityNode(dir == DemoFleet.explorationDirection.get(tc.getTankerID()) ? crossDirectionMovement.get(dir) : dir);
     }
 
+    /**
+     * Opportunistic exploration
+     * @param moves Tanker intentions
+     * @param tc Tanker status
+     * @param taskedStation List of observable tasked station
+     */
     public void getPassbyTask(Deque<CoreEntity> moves, TankerCoordinator tc, List<CoreEntity> taskedStation) {
         if (!taskedStation.isEmpty()) {
             CoreEntity ts = taskedStation.get(taskedStation.size() - 1);

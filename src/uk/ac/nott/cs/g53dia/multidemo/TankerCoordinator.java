@@ -7,6 +7,9 @@ import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
 
 import java.util.Deque;
 
+/**
+ * Tanker status
+ */
 public class TankerCoordinator {
     public static int FATAL_ERROR = Integer.MIN_VALUE;
     public static int OUT_OF_FUEL_ERROR = -2;
@@ -62,6 +65,10 @@ public class TankerCoordinator {
         return tankerCoordinate;
     }
 
+    /**
+     * MoveTowardsAction execute should also execute this to displace tanker coordinate as it moves towards an entity
+     * @param towardsEntity Head of moves stack
+     */
     public void moveTowardsActionTankerDisplace(CoreEntity towardsEntity) {
         NumberTuple ddTuple = Calculation.diagonalDistanceTuple(this.tankerCoordinate, towardsEntity.getCoord());
         if (ddTuple.getValue(0) != 0 || ddTuple.getValue(1) != 0) { // Tanker not on entity
@@ -69,10 +76,18 @@ public class TankerCoordinator {
         }
     }
 
+    /**
+     * Checks if an action has failed and revert coordinate
+     * @param actionFailed
+     * @param moves Tanker intentions
+     * @param currentCell
+     * @param t
+     * @param historyTail Tanker deliberated trail
+     */
     public void checkActionFailed(boolean actionFailed, Deque<CoreEntity> moves, Cell currentCell, Tanker t, CoreEntity historyTail) {
         if (actionFailed) {
+            // Fails when performing a refuel/dispose/load action
             if (historyTail != null && currentCell.getPoint().hashCode() == historyTail.getEntity().getPoint().hashCode()) {
-                System.out.println("Tanker Coordinate backup inner: " + tankerCoordinateBackup);
                 switch (EntityChecker.getEntityType(currentCell, false)) {
                     case EntityChecker.FUELPUMP:
                         if (t.getFuelLevel() < Tanker.MAX_WASTE - 1) {
@@ -106,12 +121,16 @@ public class TankerCoordinator {
                         break;
                 }
             }
-            else {
+            else { // Fails when moving
                 tankerCoordinate = tankerCoordinateBackup.clone();
             }
         }
     }
 
+    /**
+     * Displaces tanker coordinate with the bearing it currently is traversing at
+     * @param moveAction Bearing
+     */
     public void moveActionTankerDisplace(int moveAction) {
         tankerCoordinateBackup = tankerCoordinate.clone();
         int x = 0, y = 0;
@@ -165,6 +184,13 @@ public class TankerCoordinator {
         return totalWasteCollected;
     }
 
+    /**
+     * Sets the status of the tanker
+     * @param t Tanker object
+     * @param entityUnderTanker The entity under the tanker, use getCurrentCell(view)
+     * @param currentAction Tanker current plan
+     * @param timestep Current timestep
+     */
     public void setTankerStatus(Tanker t, CoreEntity entityUnderTanker, int currentAction, long timestep) {
         this.timestep = timestep;
         this.entityUnderTanker = entityUnderTanker;
@@ -176,6 +202,11 @@ public class TankerCoordinator {
         this.currentAction = currentAction;
     }
 
+    /**
+     * Sets the current action of the tanker. Mainly used for debugging purposes only.
+     * @param currentMove Head of the moves stack
+     * @return Integer representation of the current action
+     */
     public int setCurrentAction(CoreEntity currentMove) {
         int ca = FATAL_ERROR;
         if (currentMove.isDirectionalEntity()) {
@@ -202,6 +233,11 @@ public class TankerCoordinator {
         return ca;
     }
 
+    /**
+     * Stores the closest fuel pump or well
+     * @param fuelpump
+     * @param well
+     */
     public void setClosestFuelWell(CoreEntity fuelpump, CoreEntity well) {
         CoreEntity tmp;
         if(fuelpump == null) {
@@ -213,21 +249,7 @@ public class TankerCoordinator {
         else {
             this.closestObservableFuelpump = fuelpump;
         }
-        if(well == null) {
-            tmp = getClosest(EntityChecker.WELL);
-            if(tmp != null && this.closestObservableWell != null &&
-                    tankerCoordinate.distanceToCoordinate(this.closestObservableWell.getCoord()) > tankerCoordinate.distanceToCoordinate(tmp.getCoord())) {
-                this.closestObservableWell = tmp;
-            }
-        }
-        else {
-            this.closestObservableWell = well;
-        }
-        if (this.closestObservableWell != null) {
-            if (this.closestObservableWell.getCoord().distanceToCoordinate(this.closestObservableFuelpump.getCoord()) > 20) {
-                this.closestObservableWell = null;
-            }
-        }
+        this.closestObservableWell = well;
     }
 
     private CoreEntity getClosest(int entityType) {

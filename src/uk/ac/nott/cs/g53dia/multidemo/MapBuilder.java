@@ -29,6 +29,12 @@ public class MapBuilder {
 
     public List<CoreEntity> getEntityMap(int entityType) { return map.get(entityType); }
 
+    /**
+     * Adds an entity into global map
+     * @param entity
+     * @return {@link this#REJECTED} if entity is a directional entity. {@link this#EXIST} if entity is to be updated
+     * or {@link this#ADD} if entity is new
+     */
     public int addEntity(CoreEntity entity) {
         if(entity.isDirectionalEntity()) {
             return REJECTED;
@@ -50,6 +56,12 @@ public class MapBuilder {
         }
     }
 
+    /**
+     * Adds or update an entity into the global map
+     * @param entity
+     * @param entityType
+     * @return
+     */
     private int adder(CoreEntity entity, int entityType) {
         if(map.get(entityType).isEmpty()) {
             map.get(entityType).add(entity);
@@ -81,6 +93,11 @@ public class MapBuilder {
         }
     }
 
+    /**
+     * Removes a tasked station when the station has been visited by a tanker
+     * @param taskedStation
+     * @return True if task station is removed
+     */
     public boolean removeTaskedStation(CoreEntity taskedStation) {
         return map.get(EntityChecker.TASKEDSTATION).remove(taskedStation);
     }
@@ -92,6 +109,12 @@ public class MapBuilder {
         return ind == -1 ? null : map.get(entityType).get(ind);
     }
 
+    /**
+     * Tags an entity with information of the tanker moving towards it. Iterate through intention to set this.
+     * @param entity Moving towards entity
+     * @param tankerID
+     * @param tankerDistanceToEntity Tanker current distance to the entity
+     */
     public void setTankerMoveTowardsEntity(CoreEntity entity, int tankerID, int tankerDistanceToEntity) {
         int entityType = EntityChecker.getEntityType(entity.getEntity(), true);
         int ind = map.get(entityType).indexOf(entity);
@@ -101,6 +124,10 @@ public class MapBuilder {
         }
     }
 
+    /**
+     * Untag the tanker information on the entity as it has visited it
+     * @param entity
+     */
     public void unsetTankerMoveTowardsEntity(CoreEntity entity) {
         int entityType = EntityChecker.getEntityType(entity.getEntity(), true);
         int ind = map.get(entityType).indexOf(entity);

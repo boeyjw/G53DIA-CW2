@@ -4,6 +4,9 @@ import uk.ac.nott.cs.g53dia.multilibrary.Tanker;
 
 import java.util.*;
 
+/**
+ * Single agent planner
+ */
 public class SinglePlanner extends Planner {
     private static final int EXTEND_VIEW_BY = 10;
 
@@ -14,8 +17,8 @@ public class SinglePlanner extends Planner {
             return null;
         }
 
-//        Hashtable<Integer, List<CoreEntity>> extendedEntities = extendedView(map.getMap(), entities, tc.getTankerCoordinate());
-        Hashtable<Integer, List<CoreEntity>> extendedEntities = new Hashtable<>(entities);
+        Hashtable<Integer, List<CoreEntity>> extendedEntities = new Hashtable<>(entities); // Create copy of agent observable space
+        // Remove any tasked station that has a tanker visiting it
         for (Iterator<CoreEntity> iter = extendedEntities.get(EntityChecker.TASKEDSTATION).iterator(); iter.hasNext(); ) {
             CoreEntity taskedEntity = iter.next();
             CoreEntity mapStationEntity = map.getEntity(taskedEntity);
@@ -24,6 +27,7 @@ public class SinglePlanner extends Planner {
             }
         }
 
+        // Begin search algorithm
         EntityNode source = (EntityNode) tc.getEntityUnderTanker();
         int nextMove = EntityChecker.DUMMY;
         int estFuelLevel = tc.getFuelLevel();
@@ -36,7 +40,7 @@ public class SinglePlanner extends Planner {
                 nextMove = EntityChecker.WELL;
             } else if (!extendedEntities.get(EntityChecker.TASKEDSTATION).isEmpty()) {
                 nextMove = EntityChecker.TASKEDSTATION;
-            } else {
+            } else { // Plan completed
                 nextMove = Integer.MAX_VALUE;
             }
 
@@ -72,6 +76,7 @@ public class SinglePlanner extends Planner {
                     }
                     nextEntity.setParent(source);
                     source = nextEntity;
+                    // Next move is enqueued thus directional entity must be dequeue
                     if(!moves.isEmpty() && moves.peekLast().isDirectionalEntity()) {
                         moves.removeLast();
                     }
@@ -83,6 +88,13 @@ public class SinglePlanner extends Planner {
         return moves;
     }
 
+    /**
+     * Get an extended view of entities (entities outside of tanker observable space)
+     * @param map {@link DemoFleet#mapper}
+     * @param entities Tanker observable entities
+     * @param tankerCoordinate Tanker status
+     * @return Entities + any entities within the extended view radii
+     */
     private Hashtable<Integer, List<CoreEntity>> extendedView(Hashtable<Integer, List<CoreEntity>> map, Hashtable<Integer, List<CoreEntity>> entities,
                                                               Coordinates tankerCoordinate) {
         Hashtable<Integer, List<CoreEntity>> extendedEntities = new Hashtable<>(entities);
@@ -98,6 +110,12 @@ public class SinglePlanner extends Planner {
         return extendedEntities;
     }
 
+    /**
+     * Reduces waste in station in theory during deliberation
+     * @param entities Modify the entities object directly
+     * @param taskedStation The tasked station targeted
+     * @param wasteCollected Amount of waste managed to be collected by the tanker
+     */
     private void reduceWasteInStation(Hashtable<Integer, List<CoreEntity>> entities, CoreEntity taskedStation, int wasteCollected) {
         int ind = entities.get(EntityChecker.TASKEDSTATION).indexOf(taskedStation);
         if (ind == -1) {

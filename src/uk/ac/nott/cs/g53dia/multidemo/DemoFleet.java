@@ -9,13 +9,19 @@ public class DemoFleet extends Fleet {
     /** 
      * Number of tankers in the fleet
      */
-    private static int FLEET_SIZE = 2;
+    private static int FLEET_SIZE = 4;
 
+    // Global map
     public static MapBuilder mapper;
+    // Exploit map
     public static ClusterMapBuilder clustermap;
+    // All tanker status
     public static Hashtable<Integer, TankerCoordinator> allTankers;
+    // All tanker history of moves
     public static Hashtable<Integer, List<String>> history;
+    // All tanker exploration direction
     public static Hashtable<Integer, Integer> explorationDirection;
+    // Multiagent planning
     public static Planner multiplanner;
 
     public DemoFleet() {

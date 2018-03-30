@@ -10,6 +10,14 @@ public class Coordinates extends TwoNumberTuple {
         super(x, y);
     }
 
+    /**
+     * Modifiy existing coordinate
+     * @param x
+     * @param y
+     * Use {@link this#coordinateShiftBy(NumberTuple, NumberTuple, char)} instead. Coordinates are hard linked
+     * to the tanker or entity and creating a new coordinate is safer.
+     */
+    @Deprecated
     public void modifyCoordinates(int x, int y) {
         if(x != Integer.MIN_VALUE)
             this.x = x;
@@ -17,10 +25,20 @@ public class Coordinates extends TwoNumberTuple {
             this.y = y;
     }
 
+    /**
+     * @param x
+     * Use {@link this#coordinateShiftBy(NumberTuple, NumberTuple, char)}
+     */
+    @Deprecated
     public void modifyX(int x) {
         this.x = x;
     }
 
+    /**
+     * Use {@link this#coordinateShiftBy(NumberTuple, NumberTuple, char)}
+     * @param y
+     */
+    @Deprecated
     public void modifyY(int y) {
         this.y = y;
     }
@@ -44,6 +62,14 @@ public class Coordinates extends TwoNumberTuple {
                 Math.abs(target.getValue(1) - this.getValue(1)));
     }
 
+    /**
+     * Shifts existing coordinate
+     * @param otherNumberTuple Another coordinate
+     * @param operation '+' or '-' between coordinates
+     * @return This object
+     * Modifying existing coordinates is unsafe as coordinates are hard linked to an entity or tanker. Use
+     * {@link this#coordinateShiftBy(NumberTuple, NumberTuple, char)} instead
+     */
     @Deprecated
     public Coordinates coordinateShiftBy(NumberTuple otherNumberTuple, char operation) {
         switch (operation) {
@@ -62,6 +88,13 @@ public class Coordinates extends TwoNumberTuple {
         return this;
     }
 
+    /**
+     * Shifts source coordinate based on target coordinate
+     * @param source Source coodinate
+     * @param target Target coordinate
+     * @param operation '+' or '-' between coordinates
+     * @return A coodinate object which has (x,y) shifted
+     */
     public static Coordinates coordinateShiftBy(NumberTuple source, NumberTuple target, char operation) {
         int x = source.getValue(0);
         int y = source.getValue(1);
@@ -82,6 +115,11 @@ public class Coordinates extends TwoNumberTuple {
         return new Coordinates(x, y);
     }
 
+    /**
+     * Get closest entity in targets based on this coordinate
+     * @param targets Entities to be considered
+     * @return The closest entity in targets
+     */
     public int getClosestEntityDistance(List<CoreEntity> targets) {
         if(targets.isEmpty()) {
             return Integer.MAX_VALUE;

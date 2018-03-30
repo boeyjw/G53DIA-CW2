@@ -5,8 +5,8 @@ import uk.ac.nott.cs.g53dia.multilibrary.*;
 /**
  * An example of how to simulate execution of a tanker agent in the sample (task) environment.
  * <p>
- * Creates a default {@link Environment}, a {@link DemoTanker} and a GUI window 
- * (a {@link TankerViewer}) and executes the Tanker for DURATION days in the environment. 
+ * Creates a default {@link Environment}, a {@link DemoTanker} and a GUI window
+ * (a {@link TankerViewer}) and executes the Tanker for DURATION days in the environment.
  *
  * @author Julian Zappala
  */
@@ -34,21 +34,21 @@ public class DemoSimulator {
 
     public static void main(String[] args) {
         // Create an environment
-        Environment env = new Environment(Tanker.MAX_FUEL/2);
+        Environment env = new Environment(Tanker.MAX_FUEL / 2);
         //Create a fleet
         Fleet fleet = new DemoFleet();
         int score = 0; // TODO:
         // Create a GUI window to show the fleet
-//        TankerViewer tv = new TankerViewer(fleet);
-//        tv.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
+        TankerViewer tv = new TankerViewer(fleet);
+        tv.setDefaultCloseOperation(javax.swing.JFrame.EXIT_ON_CLOSE);
         // Start executing the tankers in the Fleet
         while (env.getTimestep() < DURATION) {
             // Advance the environment timestep
             env.tick();
             // Update the GUI
-//            tv.tick(env);
+            tv.tick(env);
 
-            for (Tanker t:fleet) {
+            for (Tanker t : fleet) {
                 // Get the current view of the tanker
                 Cell[][] view = env.getView(t.getPosition(), Tanker.VIEW_RANGE);
                 // Let the tanker choose an action
@@ -65,13 +65,9 @@ public class DemoSimulator {
             }
             try {
                 Thread.sleep(DELAY);
-            } catch (Exception e) { }
+            } catch (Exception e) {
+            }
         }
-
-        for(Tanker t : fleet) {
-            score += t.getScore();
-        }
-        System.out.println("Total for " + fleet.size() + " tankers: " + score + "\nAverage: " + score / fleet.size());
     }
 
 }

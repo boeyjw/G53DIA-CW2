@@ -51,10 +51,20 @@ public class EntityChecker {
         return entity instanceof EmptyCell;
     }
 
+    /**
+     * Checks if a station has a task
+     * @param station
+     * @return True if there is task in station
+     */
     public static boolean hasTaskStation(Cell station) {
         return isStation(station) && ((Station) station).getTask() != null;
     }
 
+    /**
+     * Checks if there is waste in a station. Redundant function as {@link this#hasTaskStation(Cell)} does this.
+     * @param station
+     * @return True if there is waste in station
+     */
     public static boolean hasWasteStation(Cell station) {
         return hasTaskStation(station) && ((Station) station).getTask().getWasteRemaining() > 0;
     }
@@ -88,6 +98,12 @@ public class EntityChecker {
             return "INVALID";
     }
 
+    /**
+     * Gets an integer representation of the entity types
+     * @param entity The cell of the entity
+     * @param ignoreTaskedStation True to return {@link this#STATION} even if station has a task.
+     * @return Integer representation of the entity
+     */
     public static int getEntityType(Cell entity, boolean ignoreTaskedStation) {
         if(isEmptyCell(entity))
             return EntityChecker.EMPTYCELL;

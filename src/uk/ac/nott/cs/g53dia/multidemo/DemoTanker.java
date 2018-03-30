@@ -61,20 +61,18 @@ public class DemoTanker extends Tanker {
     }
 
     public Action senseAndAct(Cell[][] view, long timestep) {
-        l.d("");
-        l.d("Timestep: " + timestep + "\t" + "TankerID: " + tc.getTankerID());
         // Init
         cleanup();
         tc.checkActionFailed(actionFailed, moves, getCurrentCell(view), this, history.isEmpty() ? null : history.get(history.size() - 1));
         tc.setTankerStatus(this, new EntityNode(getCurrentCell(view), tc.getTankerCoordinate(), timestep),
                 moves.isEmpty() ? TankerCoordinator.NOACTION : tc.setCurrentAction(moves.peekFirst()), timestep);
-        DemoFleet.history.get(tc.getTankerID()).add(getCurrentCell(view).getPoint().toString());
+        DemoFleet.history.get(tc.getTankerID()).add(tc.getTankerCoordinate().toString());
         if (moves.peekFirst().isDirectionalEntity()) {
             DemoFleet.explorationDirection.put(tc.getTankerID(), moves.peekFirst().getBearing());
         }
         else if (Calculation.targetBearing(tc.getTankerCoordinate(), moves.peekFirst().getCoord()) != Calculation.ONTANKER) {
             DemoFleet.explorationDirection.put(tc.getTankerID(), Calculation.targetBearing(tc.getTankerCoordinate(), moves.peekFirst().getCoord()));
-            if(EntityChecker.isFuelPump(moves.peekFirst().getEntity())) {
+            if(EntityChecker.isFuelPump(moves.peekFirst().getEntity())) { // If fuel pump is centre of a cluster, this tanker has visited it coincidentally
                 tc.setMovingTowardsCluster();
                 DemoFleet.clustermap.setLastVisitedCluster(moves.peekFirst(), timestep);
             }
@@ -87,8 +85,13 @@ public class DemoTanker extends Tanker {
                 well.isEmpty() ? null : well.get(well.size() - 1)
         );
         int clusterStatus = DemoFleet.clustermap.buildCluster(DemoFleet.mapper.getMap());
-        System.out.println("Cluster size: " + DemoFleet.clustermap.getClusterMap().size());
 
+        /**
+         * General moves priority guideline
+         * Exploring: (optional) fuel pump/well, (optional) tasked station, directional entity
+         * Multiagent planning: Sequence of fuel pumps, directional entity
+         * Single agent planning: Sequence of local planning, directional entity
+         */
         boolean isExplore = false;
         explorer.plan(DemoFleet.mapper, DemoFleet.clustermap, entities, moves, tc, timestep);
         while (!plancontroller.allowMoveset(moves, entities, tc, timestep) && !isExplore) {
@@ -117,10 +120,10 @@ public class DemoTanker extends Tanker {
                     plancontroller.plan(DemoFleet.mapper, DemoFleet.clustermap, entities, moves, tc, timestep);
                     break;
             }
-            System.out.println("Plan type: " + planType);
-            System.out.println(plancontroller);
         }
-        plancontroller.managedPlan();
+        plancontroller.managedPlan(); // Reset all plan controller flags
+
+        // Ensure last entity is always a directional entity
         if(moves.isEmpty()) {
             moves.addLast(explorer.decideDirection(DemoFleet.mapper.getEntityMap(EntityChecker.FUELPUMP), tc));
         }
@@ -128,30 +131,16 @@ public class DemoTanker extends Tanker {
             moves.addLast(explorer.decideDirection(DemoFleet.mapper.getEntityMap(EntityChecker.FUELPUMP), tc));
         }
 
-        l.d("Fuel: " + getFuelLevel());
-        l.d("Waste Level: " + getWasteLevel());
-        l.d("Tanker Coordinate: " + tc.getTankerCoordinate());
-        l.d("True Coordinate: " + getPosition());
-        l.dc("[");
-        for(CoreEntity m : moves) {
-            if(m.isDirectionalEntity()) {
-                l.dc("Direction: " + Calculation.directionToString(m.getBearing()));
-            }
-            else {
-                l.dc(EntityChecker.entityToString(m.getEntity(), EntityChecker.DUMMY) + " " + m.getCoord() + " " + m.getEntity().getPoint() + "\t");
-            }
-        }
-        l.d("]");
-        if(!tc.getTankerCoordinate().toString().equalsIgnoreCase(getPosition().toString())) {
-            System.out.println("Wrong coordinate");
-            System.exit(-10);
-        }
-
         setTankerMoveTowardsEntity();
         tankerClusterManager(getCurrentCell(view), timestep);
         return returnAction(view);
     }
 
+    /**
+     * Checks if tanker is currently at a cluster centre and unsets cluster flags
+     * @param currentCell The current cell under the tanker
+     * @param timestep Current timestep
+     */
     private void tankerClusterManager(Cell currentCell, long timestep) {
         if(tc.isMovingTowardsCluster() && moves.peekFirst().getEntityHash() == currentCell.getPoint().hashCode()) {
             tc.unsetMovingTowardsCluster();
@@ -237,10 +226,6 @@ public class DemoTanker extends Tanker {
         if (node.getBearing() == Calculation.ONTANKER) {
             node.setFirstVisited(timestep);
         }
-        if(!node.getCoord().toString().equalsIgnoreCase(node.getEntity().getPoint().toString())) {
-            System.out.println("Wrong entity coordinate: " + node.getCoord() + " " + node.getEntity().getPoint());
-            System.exit(-11);
-        }
         if (EntityChecker.isFuelPump(entity)) {
             fuelpump.add(node);
             DemoFleet.mapper.addEntity(node);
@@ -256,25 +241,27 @@ public class DemoTanker extends Tanker {
         }
     }
 
+    /**
+     * All in one return action utility function
+     * @param view The current cell
+     * @return An action
+     */
     private FallibleAction returnAction(Cell[][] view) {
-        if (moves.peekFirst().isDirectionalEntity()) {
-            System.out.println("Directional");
+        if (moves.peekFirst().isDirectionalEntity()) { // Nothing to check if its exploring
             tc.moveActionTankerDisplace(moves.peekFirst().getBearing());
             return new MoveAction(moves.peekFirst().getBearing());
         }
 
+        // Checks if cell under tanker is part of its intentions
         Cell c = moves.peekFirst().getEntity();
-
         if (EntityChecker.getEntityType(c, true) == EntityChecker.getEntityType(getCurrentCell(view), true) &&
                 c.getPoint().hashCode() == getCurrentCell(view).getPoint().hashCode()) {
             CoreEntity ts = moves.removeFirst();
             if (EntityChecker.isFuelPump(c) && getFuelLevel() < MAX_FUEL) {
                 history.add(ts);
-                l.d("MOVES: REFUEL" + " => " + c.getClass() + " @ " + c.getPoint());
                 return new RefuelAction();
             } else if (EntityChecker.isWell(c) && getWasteLevel() > 0) {
                 history.add(ts);
-                l.d("MOVES: DUMP" + " => " + c.getClass() + " @ " + c.getPoint());
                 return new DisposeWasteAction();
             } else if (EntityChecker.isStation(c) && getWasteCapacity() > 0) {
                 history.add(ts);
@@ -282,22 +269,18 @@ public class DemoTanker extends Tanker {
                     if (getWasteCapacity() >= ((Station) getCurrentCell(view)).getTask().getWasteRemaining()) {
                         DemoFleet.mapper.removeTaskedStation(ts);
                     }
-                    l.d("MOVES: LOAD" + " => " + c.getClass() + " @ " + c.getPoint());
                     return new LoadWasteAction(((Station) getCurrentCell(view)).getTask());
                 }
             } else { //Empty cell
-                l.d("MOVES: EMPTY CELL" + " => " + c.getClass() + " @ " + c.getPoint());
                 history.add(ts);
             }
             DemoFleet.mapper.unsetTankerMoveTowardsEntity(ts);
         }
 
         if (moves.peekFirst().isDirectionalEntity()) {
-            System.out.println("Directional");
             tc.moveActionTankerDisplace(moves.peekFirst().getBearing());
             return new MoveAction(moves.peekFirst().getBearing());
         } else {
-            System.out.println("Entity: " + moves.peekFirst().getEntity().getPoint());
             tc.moveTowardsActionTankerDisplace(moves.peekFirst());
             return new MoveTowardsAction(moves.peekFirst().getEntity().getPoint());
         }
